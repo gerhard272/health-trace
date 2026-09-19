@@ -1,1 +1,5 @@
-<Solution />
+<Solution>
+  <Project Path="HealthTrace.BLL/HealthTrace.BLL.csproj" Id="d30a7a65-9c05-4b09-88c2-ef160073aa5b" />
+  <Project Path="HealthTrace.DAL/HealthTrace.DAL.csproj" Id="9516c144-14a3-449f-909e-20420788f656" />
+  <Project Path="HealthTrace.PL.API/HealthTrace.PL.API.csproj" Id="e11ac091-6e3e-4778-b05e-5759c5db7b4f" />
+</Solution>

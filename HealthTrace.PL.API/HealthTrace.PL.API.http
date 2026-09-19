@@ -1,0 +1,6 @@
+@HealthTrace.PL.API_HostAddress = http://localhost:5042
+
+GET {{HealthTrace.PL.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
