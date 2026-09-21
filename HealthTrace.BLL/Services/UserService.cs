@@ -53,10 +53,25 @@ namespace HealthTrace.BLL.Services
             return ServiceResult<UserModel>.Ok(_mapper.Map<UserModel>(user));
         }
 
-        // Validazione minima: il task "GESTIONE ERRORI SU REGISTRAZIONE E VALIDAZIONE INPUT" la estenderà.
+        // Validazione minima: il task "GESTIONE ERRORI SU REGISTRAZIONE E VALIDAZIONE INPUT.
         private static List<string> Validate(RegisterModel model)
         {
-            throw new NotImplementedException();
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(model.Username))
+                errors.Add("Username is required");
+            if (string.IsNullOrWhiteSpace(model.FirstName))
+                errors.Add("FirstName is required");
+            if (string.IsNullOrWhiteSpace(model.LastName))
+                errors.Add("LastName is required");
+            if (string.IsNullOrWhiteSpace(model.CF) || model.CF.Length != 16)
+                errors.Add("CF not valid");
+            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 8)
+                errors.Add("The password must be at least 8 characters");
+            if (model.Password != model.PasswordConfirmation)
+                errors.Add("The passwords do not match");
+
+            return errors;
         }
     }
 }
