@@ -9,11 +9,7 @@ namespace HealthTrace.PL.API.Configurations
         public MappingProfile()
         {
             CreateMap<User, UserModel>().ReverseMap();
-            CreateMap<Patient, PatientModel>().ReverseMap();
-            CreateMap<Doctor, DoctorModel>().ReverseMap();
-            CreateMap<Appointment, AppointmentModel>().ReverseMap();
-            CreateMap<Prescription, PrescriptionModel>().ReverseMap();
-            CreateMap<MedicalRecord, MedicalRecordModel>().ReverseMap();
+            CreateMap<Symptom, SymptomModel>().ReverseMap();
         }
     }
 }
