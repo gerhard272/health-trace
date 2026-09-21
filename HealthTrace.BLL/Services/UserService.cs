@@ -5,6 +5,7 @@ using HealthTrace.BLL.Results;
 using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services.Interfaces;
 using AutoMapper;
+using FluentValidation;
 
 namespace HealthTrace.BLL.Services
 {
@@ -17,24 +18,26 @@ namespace HealthTrace.BLL.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IValidator<RegisterModel> _validator;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IPasswordHasher passwordHasher)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IPasswordHasher passwordHasher, IValidator<RegisterModel> validator)
             : base(unitOfWork, mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _passwordHasher = passwordHasher;
+            _validator = validator;
         }
 
         /// <summary>
-        /// Validazione minima, controlli di unicità (username, CF),
+        /// Validazione via FluentValidation, controlli di unicità (username, CF),
         /// hashing della password e persistenza via UnitOfWork.
         /// </summary>
         public async Task<ServiceResult<UserModel>> RegisterAsync(RegisterModel model, CancellationToken cancellationToken = default)
         {
-            var errors = Validate(model);
-            if (errors.Count > 0)
-                return ServiceResult<UserModel>.ValidationError(errors);
+            var validation = await _validator.ValidateAsync(model, cancellationToken);
+            if (!validation.IsValid)
+                return ServiceResult<UserModel>.ValidationError(validation.Errors.Select(e => e.ErrorMessage).ToList());
 
             var repository = _unitOfWork.Repository<User>();
 
@@ -51,27 +54,6 @@ namespace HealthTrace.BLL.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return ServiceResult<UserModel>.Ok(_mapper.Map<UserModel>(user));
-        }
-
-        // Validazione minima: il task "GESTIONE ERRORI SU REGISTRAZIONE E VALIDAZIONE INPUT.
-        private static List<string> Validate(RegisterModel model)
-        {
-            var errors = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(model.Username))
-                errors.Add("Username is required");
-            if (string.IsNullOrWhiteSpace(model.FirstName))
-                errors.Add("FirstName is required");
-            if (string.IsNullOrWhiteSpace(model.LastName))
-                errors.Add("LastName is required");
-            if (string.IsNullOrWhiteSpace(model.CF) || model.CF.Length != 16)
-                errors.Add("CF not valid");
-            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 8)
-                errors.Add("The password must be at least 8 characters");
-            if (model.Password != model.PasswordConfirmation)
-                errors.Add("The passwords do not match");
-
-            return errors;
         }
     }
 }
