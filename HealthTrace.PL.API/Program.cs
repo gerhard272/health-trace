@@ -1,17 +1,25 @@
+using FluentValidation;
 using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.BLL.Validations;
+using HealthTrace.DAL.Data;
 using HealthTrace.DAL.Repositories;
 using HealthTrace.DAL.Repositories.Interfaces;
 using HealthTrace.PL.API.Configurations;
 using HealthTrace.PL.API.Security;
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddDbContext<HealthTraceDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("HealthTraceDb")
+    )
+);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
