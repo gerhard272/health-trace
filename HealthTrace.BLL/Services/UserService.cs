@@ -20,7 +20,11 @@ namespace HealthTrace.BLL.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IValidator<RegisterModel> _validator;
 
-        public UserService(IUnitOfWork unitOfWork, IMapper mapper, IPasswordHasher passwordHasher, IValidator<RegisterModel> validator)
+        public UserService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IPasswordHasher passwordHasher,
+            IValidator<RegisterModel> validator)
             : base(unitOfWork, mapper)
         {
             _unitOfWork = unitOfWork;
@@ -33,11 +37,14 @@ namespace HealthTrace.BLL.Services
         /// Validazione via FluentValidation, controlli di unicità (username, CF),
         /// hashing della password e persistenza via UnitOfWork.
         /// </summary>
-        public async Task<ServiceResult<UserModel>> RegisterAsync(RegisterModel model, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<UserModel>> RegisterAsync(
+            RegisterModel model,
+            CancellationToken cancellationToken = default)
         {
             var validation = await _validator.ValidateAsync(model, cancellationToken);
             if (!validation.IsValid)
-                return ServiceResult<UserModel>.ValidationError(validation.Errors.Select(e => e.ErrorMessage).ToList());
+                return ServiceResult<UserModel>.ValidationError(
+                    validation.Errors.Select(e => e.ErrorMessage).ToList());
 
             var repository = _unitOfWork.Repository<User>();
 
@@ -52,6 +59,25 @@ namespace HealthTrace.BLL.Services
 
             await repository.AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return ServiceResult<UserModel>.Ok(_mapper.Map<UserModel>(user));
+        }
+
+        /// <summary>
+        /// Verifica le credenziali e restituisce il profilo utente se valide.
+        /// SingleOrDefault è sicuro perché l'unicità dello username è garantita in fase di registrazione.
+        /// </summary>
+        public async Task<ServiceResult<UserModel>> LoginAsync(
+            string username,
+            string password,
+            CancellationToken cancellationToken = default)
+        {
+            var repository = _unitOfWork.Repository<User>();
+            var user = (await repository.FindAsync(u => u.Username == username, cancellationToken))
+                .SingleOrDefault();
+
+            if (user is null || !_passwordHasher.VerifyPassword(user.PasswordHash, password))
+                return ServiceResult<UserModel>.Unauthorized("Invalid username or password");
 
             return ServiceResult<UserModel>.Ok(_mapper.Map<UserModel>(user));
         }
