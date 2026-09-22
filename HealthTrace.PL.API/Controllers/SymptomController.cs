@@ -8,12 +8,16 @@ namespace HealthTrace.PL.API.Controllers {
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize] //questo indica che tutte le azioni del controller richiedono l'autenticazione - Mostra errore perché non ho i file bll
     public class SymptomController : ControllerBase {
         private readonly ISymptomService _service;
 
         public SymptomController(ISymptomService service) {
             _service = service;
         }
+
+        private int GetCurrentUserId() =>
+            int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value); //Metodo helper privato: legge l'userId dal claim invece che dalla route - FIX 
 
         // GET: api/symptoms
 
