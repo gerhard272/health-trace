@@ -1,6 +1,7 @@
 ﻿using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace HealthTrace.PL.API.Controllers {
@@ -15,9 +16,6 @@ namespace HealthTrace.PL.API.Controllers {
         public SymptomController(ISymptomService service) {
             _service = service;
         }
-
-        private int GetCurrentUserId() =>
-            int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value); //Metodo helper privato: legge l'userId dal claim invece che dalla route - FIX 
 
         // GET: api/symptoms
 
