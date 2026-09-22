@@ -5,7 +5,7 @@
     /// I controller mapperanno lo stato in HTTP status; evita try/catch diffusi e rende il contratto esplicito.
     /// Se in futuro serviranno nuovi esiti (es. Unauthorized per il login) si estende l'enum, non si creano tipi ad hoc.
     /// </summary>
-    public enum ServiceResultType { Success, ValidationError, BadRequest }
+    public enum ServiceResultType { Success, ValidationError, BadRequest, Unauthorized }
 
     public class ServiceResult<T>
     {
@@ -17,5 +17,7 @@
         public static ServiceResult<T> Ok(T data) => new() { Success = true, Type = ServiceResultType.Success, Data = data };
         public static ServiceResult<T> ValidationError(IEnumerable<string> errors) => new() { Type = ServiceResultType.ValidationError, Errors = errors };
         public static ServiceResult<T> BadRequest(string message) => new() { Type = ServiceResultType.BadRequest, Errors = [message] };
+
+        public static ServiceResult<T> Unauthorized(string message) => new() { Type = ServiceResultType.Unauthorized, Errors = [message] };
     }
 }

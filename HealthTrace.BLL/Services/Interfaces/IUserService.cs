@@ -12,5 +12,7 @@ namespace HealthTrace.BLL.Services.Interfaces
     public interface IUserService : IGenericService<UserModel>
     {
         Task<ServiceResult<UserModel>> RegisterAsync(RegisterModel model, CancellationToken cancellationToken = default);
+
+        Task<ServiceResult<UserModel>> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
     }
 }

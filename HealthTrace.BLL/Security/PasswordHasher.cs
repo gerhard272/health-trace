@@ -7,9 +7,9 @@ namespace HealthTrace.BLL.Security
     /// </summary>
     public class PasswordHasher : IPasswordHasher
     {
-        public string HashPassword(string password) => BCrypt.HashPassword(password);
+        public string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password);
 
         public bool VerifyPassword(string hashedPassword, string providedPassword)
-            => BCrypt.Verify(providedPassword, hashedPassword);
+            => BCrypt.Net.BCrypt.Verify(providedPassword, hashedPassword);
     }
 }
