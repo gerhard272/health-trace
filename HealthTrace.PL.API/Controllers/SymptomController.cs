@@ -1,6 +1,7 @@
 ﻿using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace HealthTrace.PL.API.Controllers {
@@ -8,6 +9,7 @@ namespace HealthTrace.PL.API.Controllers {
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize] //questo indica che tutte le azioni del controller richiedono l'autenticazione - Mostra errore perché non ho i file bll
     public class SymptomController : ControllerBase {
         private readonly ISymptomService _service;
 
