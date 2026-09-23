@@ -1,14 +1,11 @@
 ﻿namespace HealthTrace.BLL.Models
 {
-    public class RegisterModel
+    /// <summary>
+    /// DTO di input per la registrazione di un nuovo utente.
+    /// </summary>
+    public class RegisterModel : UserBaseModel
     {
-        public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string PasswordConfirmation { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string CF { get; set; } = string.Empty;
-        public DateOnly? BirthDate { get; set; }
-        public string? BirthPlace { get; set; }
     }
 }
