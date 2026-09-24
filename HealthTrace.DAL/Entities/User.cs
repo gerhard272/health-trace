@@ -1,6 +1,6 @@
 namespace HealthTrace.DAL.Entities
 {
-	public class User
+	public class User : AuditEntity, IEntity
 	{
 		public int Id { get; set; }
 		public string Username { get; set; } = string.Empty;

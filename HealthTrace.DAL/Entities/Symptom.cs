@@ -1,6 +1,6 @@
 ﻿namespace HealthTrace.DAL.Entities
 {
-    public class Symptom
+    public class Symptom: AuditEntity, IEntity
     {
         public int Id { get; set; }
         public int UserId { get; set; }
