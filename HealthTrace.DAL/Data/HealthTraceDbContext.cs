@@ -5,9 +5,12 @@ namespace HealthTrace.DAL.Data
 {
     public class HealthTraceDbContext : DbContext
     {
-        public HealthTraceDbContext(DbContextOptions<HealthTraceDbContext> options)
+        private readonly ICurrentUserService _currentUserService;
+        public HealthTraceDbContext(DbContextOptions<HealthTraceDbContext> options, 
+                                    ICurrentUserService currentUserService)
             : base(options)
         {
+            _currentUserService = currentUserService;
         }
 
         public DbSet<User> Users { get; set; }
@@ -42,6 +45,62 @@ namespace HealthTrace.DAL.Data
                     .HasForeignKey(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+        }
+
+        public override int SaveChanges()
+        {
+            ApplyAuditInfo();
+            return base.SaveChanges();
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            ApplyAuditInfo();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ApplyAuditInfo();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            ApplyAuditInfo();
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        private void ApplyAuditInfo()
+        {
+            var currentUserId = _currentUserService.UserId ?? 0;
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<AuditEntity>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.Entity.CreatedAt = now;
+                        entry.Entity.CreatedBy = currentUserId;
+                        entry.Entity.IsDeleted = false;
+                        break;
+
+                    case EntityState.Modified:
+                        entry.Entity.ModifiedAt = now;
+                        entry.Entity.ModifiedBy = currentUserId;
+                        entry.Property(e => e.CreatedAt).IsModified = false;
+                        entry.Property(e => e.CreatedBy).IsModified = false;
+                        break;
+
+                    case EntityState.Deleted:
+                        entry.State = EntityState.Modified;
+                        entry.Entity.IsDeleted = true;
+                        entry.Entity.DeletedAt = now;
+                        entry.Entity.DeletedBy = currentUserId;
+                        break;
+                }
+            }
         }
     }
 }

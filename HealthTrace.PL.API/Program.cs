@@ -1,8 +1,10 @@
 using FluentValidation;
+using HealthTrace.API.Services;
 using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.BLL.Validations;
+using HealthTrace.DAL;
 using HealthTrace.DAL.Data;
 using HealthTrace.DAL.Repositories;
 using HealthTrace.DAL.Repositories.Interfaces;
@@ -28,6 +30,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterModelValidator>();
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile).Assembly);
