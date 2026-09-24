@@ -5,9 +5,10 @@ namespace HealthTrace.BLL.Services.Interfaces
 {
     /// <summary>
     /// Contratto dell'utente: estende IGenericService, il CRUD generico già
-    /// implementato da GenericService e aggiunge RegisterAsync.
+    /// implementato da GenericService e aggiunge RegisterAsync e LoginAsync.
     /// Nota: per gli utenti il Create/Update generico NON va usato (l'hash non transita in UserModel):
-    /// la creazione passa esclusivamente da RegisterAsync.
+    /// la creazione passa esclusivamente da RegisterAsync
+    /// il login passa esclusivamente da LoginAsync
     /// </summary>
     public interface IUserService : IGenericService<UserModel>
     {

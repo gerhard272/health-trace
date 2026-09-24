@@ -10,6 +10,7 @@ namespace HealthTrace.PL.API.Configurations
         {
             CreateMap<User, UserModel>().ReverseMap();
             CreateMap<Symptom, SymptomModel>().ReverseMap();
+            CreateMap<RegisterModel, User>().ForMember(u => u.PasswordHash, opt => opt.Ignore());
         }
     }
 }
