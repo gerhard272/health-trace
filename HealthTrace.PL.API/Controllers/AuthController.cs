@@ -2,10 +2,12 @@
 using HealthTrace.BLL.Results;
 using HealthTrace.BLL.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HealthTrace.PL.API.Controllers
 {
     [ApiController]
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [Produces("application/json")]
     public class AuthController : ControllerBase

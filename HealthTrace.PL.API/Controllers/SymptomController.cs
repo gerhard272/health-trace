@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Authorization;
 namespace HealthTrace.PL.API.Controllers {
 
     [ApiController]
+    /// <summary>
+    /// [Authorize] attributo indica che tutte le azioni in questo controller richiedono l'autenticazione dell'utente.
+    /// Gli utenti non autenticati riceveranno una risposta 401 Unauthorized.
+    /// </summary>>
+    [Authorize]
     [Route("api/[controller]")]
     [Produces("application/json")]
     [Authorize] //questo indica che tutte le azioni del controller richiedono l'autenticazione - Mostra errore perché non ho i file bll
