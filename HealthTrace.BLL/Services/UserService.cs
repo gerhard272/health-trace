@@ -65,16 +65,19 @@ namespace HealthTrace.BLL.Services
 
         /// <summary>
         /// Verifica le credenziali e restituisce il profilo utente se valide.
-        /// SingleOrDefault è sicuro perché l'unicità dello username è garantita in fase di registrazione.
+        /// FirstOrDefault è sicuro perché l'unicità dello username è garantita in fase di registrazione.
         /// </summary>
         public async Task<ServiceResult<UserModel>> LoginAsync(
             string username,
             string password,
             CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                return ServiceResult<UserModel>.ValidationError(["Username and password are required"]);
+
             var repository = _unitOfWork.Repository<User>();
             var user = (await repository.FindAsync(u => u.Username == username, cancellationToken))
-                .SingleOrDefault();
+                .FirstOrDefault();
 
             if (user is null || !_passwordHasher.VerifyPassword(user.PasswordHash, password))
                 return ServiceResult<UserModel>.Unauthorized("Invalid username or password");
