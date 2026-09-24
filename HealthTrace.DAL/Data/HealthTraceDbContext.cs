@@ -5,9 +5,12 @@ namespace HealthTrace.DAL.Data
 {
     public class HealthTraceDbContext : DbContext
     {
-        public HealthTraceDbContext(DbContextOptions<HealthTraceDbContext> options)
+        private readonly ICurrentUserService _currentUserService;
+        public HealthTraceDbContext(DbContextOptions<HealthTraceDbContext> options, 
+                                    ICurrentUserService currentUserService)
             : base(options)
         {
+            _currentUserService = currentUserService;
         }
 
         public DbSet<User> Users { get; set; }
