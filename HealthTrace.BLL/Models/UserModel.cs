@@ -6,14 +6,11 @@
 /// </summary>
 namespace HealthTrace.BLL.Models
 {
-    public class UserModel : IModelWithId
+    /// <summary>
+    /// DTO di output/CRUD per le informazioni dell'utente.
+    /// </summary>
+    public class UserModel : UserBaseModel, IModelWithId
     {
         public int Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string CF { get; set; } = string.Empty;
-        public DateOnly? BirthDate { get; set; }
-        public string? BirthPlace { get; set; }
     }
 }
