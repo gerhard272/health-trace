@@ -84,5 +84,17 @@ namespace HealthTrace.BLL.Services
 
             return ServiceResult<UserModel>.Ok(_mapper.Map<UserModel>(user));
         }
+
+        /// Questo overload consente di passare direttamente un LoginModel
+        /// invece di username e password separati.
+        public Task<ServiceResult<UserModel>> LoginAsync(
+            LoginModel model,
+            CancellationToken cancellationToken = default)
+        {
+            if (model is null)
+                return Task.FromResult(ServiceResult<UserModel>.ValidationError(["Username and password are required"]));
+
+            return LoginAsync(model.Username, model.Password, cancellationToken);
+        }
     }
 }

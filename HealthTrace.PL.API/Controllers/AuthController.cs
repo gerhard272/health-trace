@@ -37,5 +37,28 @@ namespace HealthTrace.PL.API.Controllers
                 })
             };
         }
+
+        [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<UserModel>> Login(
+            [FromBody] LoginModel model,
+            CancellationToken cancellationToken)
+        {
+            var result = await _userService.LoginAsync(model, cancellationToken);
+
+            return result.Type switch
+            {
+                ServiceResultType.Success => Ok(result.Data),
+                ServiceResultType.Unauthorized => Unauthorized(),
+                _ => ValidationProblem(new ValidationProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Validation failed",
+                    Errors = { ["general"] = result.Errors.ToArray() }
+                })
+            };
+        }
     }
 }
