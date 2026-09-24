@@ -15,5 +15,7 @@ namespace HealthTrace.BLL.Services.Interfaces
         Task<ServiceResult<UserModel>> RegisterAsync(RegisterModel model, CancellationToken cancellationToken = default);
 
         Task<ServiceResult<UserModel>> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
+
+        Task<ServiceResult<UserModel>> LoginAsync(LoginModel model, CancellationToken cancellationToken = default);
     }
 }
