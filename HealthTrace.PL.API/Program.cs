@@ -8,6 +8,7 @@ using HealthTrace.DAL;
 using HealthTrace.DAL.Data;
 using HealthTrace.DAL.Repositories;
 using HealthTrace.DAL.Repositories.Interfaces;
+using HealthTrace.DAL.Storage;
 using HealthTrace.PL.API.Configurations;
 using HealthTrace.PL.API.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -24,6 +25,11 @@ builder.Services.AddDbContext<HealthTraceDbContext>(options =>
     )
 );
 
+builder.Services.AddOptions<BlobStorageOptions>()
+    .Bind(builder.Configuration.GetSection(BlobStorageOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -31,6 +37,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
