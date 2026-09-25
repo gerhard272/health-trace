@@ -12,6 +12,7 @@ using HealthTrace.PL.API.Configurations;
 using HealthTrace.PL.API.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference("/api-docs");
 }
 
 app.UseHttpsRedirection();
