@@ -18,7 +18,7 @@ namespace HealthTrace.DAL.Storage
         public async Task<string> UploadAsync(string containerName, string blobName, Stream content, string contentType, CancellationToken cancellationToken = default)
         {
             if (content.Length > _options.MaxFileSizeBytes)
-                throw new InvalidOperationException($"Il file supera la dimensione massima consentita di {_options.MaxFileSizeBytes} byte.");
+                throw new InvalidOperationException($"The file has exceeded the maximum allowed size of {_options.MaxFileSizeBytes} byte.");
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
             await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
