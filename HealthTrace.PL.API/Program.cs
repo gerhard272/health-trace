@@ -10,6 +10,8 @@ using HealthTrace.DAL.Repositories;
 using HealthTrace.DAL.Repositories.Interfaces;
 using HealthTrace.DAL.Storage;
 using HealthTrace.PL.API.Configurations;
+using HealthTrace.PL.API.Handlers;
+using HealthTrace.PL.API.Handlers.Interfaces;
 using HealthTrace.PL.API.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -61,9 +63,15 @@ builder.Services.AddAuthentication("Basic")
     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", null);
 builder.Services.AddAuthorization();
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddSingleton<IProblemDetailsMapper, ExceptionStatusMapper>();
+
 var app = builder.Build();
 
 app.UseCors("AllowAngularDev");
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
