@@ -10,14 +10,14 @@ using HealthTrace.DAL.Entities;
 using HealthTrace.DAL.Repositories.Interfaces;
 using Moq;
 
-/// <summary>
-/// Class di test per la classe UserService, focalizzata sul metodo RegisterAsync.
-/// Collegata al file UserService.cs nella cartella BLL/Services.
-/// </summary>
+
 
 namespace HealthTrace.Test.BLL.Services
-
 {
+    /// <summary>
+    /// Class di test per la classe UserService, focalizzata sul metodo RegisterAsync.
+    /// Collegata al file UserService.cs nella cartella BLL/Services.
+    /// </summary>
     public class UserServiceRegisterTests
     {
         private const string PlainPassword = "Password123!";

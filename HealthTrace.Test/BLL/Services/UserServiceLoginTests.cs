@@ -12,7 +12,7 @@ using Moq;
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
-    /// Class di test per la classe UserService, focalizzata sul metodo LoginAsync
+    /// Classe di test per la classe UserService, focalizzata sul metodo LoginAsync
     /// (entrambi gli overload: username/password e LoginModel).
     /// </summary>
     public class UserServiceLoginTests
