@@ -6,7 +6,7 @@ using HealthTrace.DAL.Repositories.Interfaces;
 
 namespace HealthTrace.BLL.Services
 {
-    internal class SymptomService : ISymptomService
+    public class SymptomService : ISymptomService
     {
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
