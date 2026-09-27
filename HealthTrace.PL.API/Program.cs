@@ -30,6 +30,17 @@ builder.Services.AddOptions<BlobStorageOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -51,6 +62,8 @@ builder.Services.AddAuthentication("Basic")
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseCors("AllowAngularDev");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
