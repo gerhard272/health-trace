@@ -6,8 +6,10 @@ import {
   Validators,
 } from '@angular/forms';
 
+import { CommonModule } from '@angular/common';
+
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   selector: 'app-register',
   styleUrl: './register.css',
   templateUrl: './register.html',

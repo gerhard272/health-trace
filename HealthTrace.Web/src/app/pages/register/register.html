@@ -1,1 +1,45 @@
-<p>register works!</p>
+<form [formGroup]="registerForm" class="max-w-md mx-auto space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
+
+  <div>
+    <label for="username" class="mb-1 block text-sm font-medium text-gray-700">Username:</label>
+    <input type="text" id="username" formControlName="username" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Password:</label>
+    <input type="password" id="password" formControlName="password" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="passwordConfirmation" class="mb-1 block text-sm font-medium text-gray-700">Confirm Password:</label>
+    <input type="password" id="passwordConfirmation" formControlName="passwordConfirmation" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="firstName" class="mb-1 block text-sm font-medium text-gray-700">First Name:</label>
+    <input type="text" id="firstName" formControlName="firstName" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="lastName" class="mb-1 block text-sm font-medium text-gray-700">Last Name:</label>
+    <input type="text" id="lastName" formControlName="lastName" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="cf" class="mb-1 block text-sm font-medium text-gray-700">CF:</label>
+    <input type="text" id="cf" formControlName="cf" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="birthDate" class="mb-1 block text-sm font-medium text-gray-700">Birth Date:</label>
+    <input type="date" id="birthDate" formControlName="birthDate" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <div>
+    <label for="birthPlace" class="mb-1 block text-sm font-medium text-gray-700">Birth Place:</label>
+    <input type="text" id="birthPlace" formControlName="birthPlace" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+  </div>
+
+  <button class="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" type="submit" [disabled]="registerForm.invalid">Register</button>
+
+</form>
