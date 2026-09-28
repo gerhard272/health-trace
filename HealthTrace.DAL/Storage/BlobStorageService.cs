@@ -1,5 +1,4 @@
 ﻿using Azure.Storage.Blobs;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace HealthTrace.DAL.Storage
@@ -15,9 +14,14 @@ namespace HealthTrace.DAL.Storage
             _blobServiceClient = new BlobServiceClient(_options.ConnectionString);
         }
 
-        public async Task<string> UploadAsync(string containerName, string blobName, Stream content, string contentType, CancellationToken cancellationToken = default)
+        public async Task<string> UploadAsync(string containerName, 
+            string blobName, 
+            Stream content, 
+            string contentType, 
+            CancellationToken cancellationToken = default)
         {
             if (content.Length > _options.MaxFileSizeBytes)
+                //qua va aggiornato in linea con la nuova impl global ex handler
                 throw new InvalidOperationException($"The file has exceeded the maximum allowed size of {_options.MaxFileSizeBytes} byte.");
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
@@ -32,21 +36,32 @@ namespace HealthTrace.DAL.Storage
             return blobClient.Uri.ToString();
         }
 
-        public async Task<Stream> DownloadAsync(string containerName, string blobName, CancellationToken cancellationToken = default)
+        public async Task<Stream> DownloadAsync(string containerName, 
+            string blobName, 
+            CancellationToken cancellationToken = default)
         {
-            var blobClient = _blobServiceClient.GetBlobContainerClient(containerName).GetBlobClient(blobName);
-            var response = await blobClient.DownloadStreamingAsync(cancellationToken: cancellationToken);
+            var blobClient = _blobServiceClient
+                                .GetBlobContainerClient(containerName)
+                                .GetBlobClient(blobName);
+            var response = await blobClient
+                                    .DownloadStreamingAsync(cancellationToken: cancellationToken);
             return response.Value.Content;
         }
 
-        public async Task<bool> DeleteAsync(string containerName, string blobName, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync(string containerName, 
+            string blobName, 
+            CancellationToken cancellationToken = default)
         {
-            var blobClient = _blobServiceClient.GetBlobContainerClient(containerName).GetBlobClient(blobName);
+            var blobClient = _blobServiceClient
+                                .GetBlobContainerClient(containerName)
+                                .GetBlobClient(blobName);
             var response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
             return response.Value;
         }
 
-        public async Task<bool> ExistsAsync(string containerName, string blobName, CancellationToken cancellationToken = default)
+        public async Task<bool> ExistsAsync(string containerName, 
+            string blobName, 
+            CancellationToken cancellationToken = default)
         {
             var blobClient = _blobServiceClient
                 .GetBlobContainerClient(containerName)
@@ -59,7 +74,8 @@ namespace HealthTrace.DAL.Storage
         {
             return _blobServiceClient
                 .GetBlobContainerClient(containerName)
-                .GetBlobClient(blobName).Uri;
+                .GetBlobClient(blobName)
+                .Uri;
         }
     }
 }
