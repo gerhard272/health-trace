@@ -1,1 +1,31 @@
-<p>login works!</p>
+
+<form [formGroup]="loginForm" class="max-w-md mx-auto space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
+
+  <div>
+    <label for="username" class="mb-1 block text-sm font-medium text-gray-700">Username:</label>
+    <input type="text" id="username" formControlName="username" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+
+    <div class="mt-1" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+
+      <span class="text-sm text-red-600" *ngIf="loginForm.get('username')?.errors?.['required']">Username is required.</span>
+      <span class="text-sm text-red-600" *ngIf="loginForm.get('username')?.errors?.['maxlength']">Username must be less than 50 characters.</span>
+
+    </div>
+  </div>
+
+  <div>
+    <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Password:</label>
+    <input type="password" id="password" formControlName="password" class="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+
+    <div class="mt-1" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+
+      <span class="text-sm text-red-600" *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</span>
+      <span class="text-sm text-red-600" *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters.</span>
+      <span class="text-sm text-red-600" *ngIf="loginForm.get('password')?.errors?.['maxlength']">Password must be less than 73 characters.</span>
+
+    </div>
+  </div>
+
+  <button class="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" type="submit" [disabled]="loginForm.invalid">Login</button>
+
+</form>
