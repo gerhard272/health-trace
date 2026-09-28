@@ -1,4 +1,5 @@
-﻿using HealthTrace.BLL.Models;
+﻿using HealthTrace.BLL.Exceptions;
+using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.DAL;
 using Microsoft.AspNetCore.Authorization;
@@ -33,11 +34,13 @@ namespace HealthTrace.PL.API.Controllers
             [FromRoute] int id,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
+            var userId = GetUserId();
 
             var symptom = await _service.GetByIdAsync(userId, id, cancellationToken);
-            return symptom is null ? NotFound() : Ok(symptom);
+            if (symptom is null)
+                throw new NotFoundException("Symptom", id);
+
+            return Ok(symptom);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////
@@ -57,13 +60,12 @@ namespace HealthTrace.PL.API.Controllers
             [FromQuery] string? name,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
+            var userId = GetUserId();
 
             var hasName = !string.IsNullOrWhiteSpace(name);
 
             if (date.HasValue && hasName)
-                return BadRequest("Specificare solo uno tra 'date' e 'name'.");
+                throw new BadRequestException("Specify only one of 'date' or 'name'.");
 
             if (date.HasValue)
                 return Ok(await _service.GetByDateAsync(userId, date.Value, cancellationToken));
@@ -88,8 +90,7 @@ namespace HealthTrace.PL.API.Controllers
             [FromBody] SymptomModel symptom,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
+            var userId = GetUserId();
 
             var createdSymptom = await _service.CreateAsync(userId, symptom, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = createdSymptom.Id }, createdSymptom);
@@ -109,15 +110,17 @@ namespace HealthTrace.PL.API.Controllers
             [FromBody] SymptomModel symptom,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
+            var userId = GetUserId();
 
             // Controllo di coerenza: l'id nella rotta deve coincidere con quello nel body
             if (id != symptom.Id)
-                return BadRequest("L'id nella rotta non coincide con l'id nel corpo della richiesta.");
+                throw new BadRequestException("The id in the route does not match the id in the request body.");
 
             var updated = await _service.UpdateAsync(userId, symptom, cancellationToken);
-            return updated is null ? NotFound() : NoContent();
+            if (updated is null)
+                throw new NotFoundException("Symptom", id);
+
+            return NoContent();
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////
@@ -132,21 +135,20 @@ namespace HealthTrace.PL.API.Controllers
             [FromRoute] int id,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
+            var userId = GetUserId();
 
             var deleted = await _service.DeleteAsync(userId, id, cancellationToken);
-            return deleted ? NoContent() : NotFound();
+            if (!deleted)
+                throw new NotFoundException("Symptom", id);
+
+            return NoContent();
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////
 
-        // Centralizza il controllo sull'utente autenticato, invece di ripeterlo in ogni action
-        private bool TryGetUserId(out int userId)
-        {
-            var current = _currentUserService.UserId;
-            userId = current ?? 0;
-            return current.HasValue;
-        }
+        // Estrae l'id dell'utente autenticato; se il claim manca il gestore
+        // globale risponde 401 senza ripetere il controllo in ogni action.
+        private int GetUserId() => _currentUserService.UserId
+            ?? throw new UnauthorizedException();
     }
 }

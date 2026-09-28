@@ -1,9 +1,12 @@
-﻿using HealthTrace.DAL.Storage;
+﻿using HealthTrace.BLL.Exceptions;
+using HealthTrace.DAL.Storage;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
 namespace HealthTrace.PL.API.Controllers
 {
+    [Authorize] // endpoint di test esposti solo agli utenti autenticati
     [ApiController]
     [Route("api/test/blob")]
     public class BlobTestController : ControllerBase
@@ -30,26 +33,27 @@ namespace HealthTrace.PL.API.Controllers
                 contentType: "text/plain",
                 cancellationToken: cancellationToken);
 
-            return Ok(new { message = "Upload riuscito", uri });
+            return Ok(new { message = "Upload successful", uri });
         }
 
         [HttpGet("read-test")]
         public async Task<IActionResult> ReadTest(CancellationToken cancellationToken)
         {
-            var exists = await _blobStorageService.ExistsAsync("test-container", "test-file.txt", cancellationToken);
+            const string blobName = "test-file.txt";
 
+            var exists = await _blobStorageService.ExistsAsync("test-container", blobName, cancellationToken);
             if (!exists)
-                return NotFound("Il blob di test non esiste, esegui prima write-test");
+                throw new NotFoundException("Blob", blobName);
 
-            var stream = await _blobStorageService.DownloadAsync("test-container", "test-file.txt", cancellationToken);
-            return File(stream, "text/plain", "test-file.txt");
+            var stream = await _blobStorageService.DownloadAsync("test-container", blobName, cancellationToken);
+            return File(stream, "text/plain", blobName);
         }
 
         [HttpPost("upload-file")]
         public async Task<IActionResult> UploadFile(IFormFile file, CancellationToken cancellationToken)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Nessun file ricevuto");
+                throw new BadRequestException("No file received.");
 
             using var stream = file.OpenReadStream();
 
@@ -60,7 +64,7 @@ namespace HealthTrace.PL.API.Controllers
                 contentType: file.ContentType,
                 cancellationToken: cancellationToken);
 
-            return Ok(new { message = "Upload riuscito", fileName = file.FileName, uri });
+            return Ok(new { message = "Upload successful", fileName = file.FileName, uri });
         }
 
         [HttpDelete("delete-test")]
