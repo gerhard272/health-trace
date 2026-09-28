@@ -18,10 +18,10 @@ namespace HealthTrace.Test.PL.API.Logging
     public class ExceptionLoggingTests
     {
         private const string LoginPath = "/api/auth/login";
-        private const string BlobPath = "/api/test/blob/write-test";
+        
 
         [Fact]
-        public void Il_logger_risolto_e_il_logger_di_serilog()
+        public void Logger_factory_is_SerilogLoggerFactory()
         {
             using var host = new LoggingTestHost(Environments.Production);
             using var client = host.CreateClient();
@@ -32,7 +32,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public async Task Una_not_found_produce_le_proprieta_strutturate_nel_log()
+        public async Task NotFound_logs_structured_properties()
         {
             using var host = HostThrowing(new NotFoundException("Symptom", 99));
             using var client = host.CreateClient();
@@ -52,7 +52,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public async Task Una_validation_produce_campi_e_conteggio_nel_log()
+        public async Task Validation_logs_fields_and_count()
         {
             var errors = new Dictionary<string, string[]>
             {
@@ -84,12 +84,12 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public async Task Una_eccezione_non_prevista_produce_500_con_stack_trace()
+        public async Task Unexpected_exception_returns_500_with_stack_trace()
         {
-            using var host = new LoggingTestHost(Environments.Production);
+            using var host = HostThrowing(new FormatException("Unexpected failure"));
             using var client = host.CreateClient();
 
-            var response = await client.PostAsync(BlobPath, new StringContent(string.Empty));
+            var response = await client.PostAsync(LoginPath, LoginBody());
 
             Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
 
@@ -104,7 +104,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public async Task Il_trace_id_della_risposso_corrisponde_a_quello_del_log()
+        public async Task Trace_id_matches_between_response_and_log()
         {
             using var host = HostThrowing(new NotFoundException("Symptom", 99));
             using var client = host.CreateClient();
@@ -124,7 +124,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public async Task In_development_il_file_non_viene_creato()
+        public async Task Log_file_not_created_in_development()
         {
             using var host = HostThrowing(new NotFoundException("Symptom", 99), Environments.Development);
             using var client = host.CreateClient();
@@ -136,7 +136,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         [Fact]
-        public void Un_percorso_di_log_vuoto_ferma_l_avvio()
+        public void Empty_log_path_stops_startup()
         {
             using var host = new LoggingTestHost(
                 Environments.Production,

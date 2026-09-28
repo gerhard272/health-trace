@@ -1,4 +1,5 @@
-﻿using HealthTrace.BLL.Models;
+﻿using HealthTrace.BLL.Exceptions;
+using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.DAL;
 using HealthTrace.DAL.Entities;
@@ -28,18 +29,21 @@ namespace HealthTrace.PL.API.Controllers
 
         // richiede un export, risponde 202 e id
         [HttpPost("request")]
-        public async Task<IActionResult> RequestExport(ExportRequestCreateModel model, 
+        public async Task<IActionResult> RequestExport(ExportRequestCreateModel model,
             CancellationToken cancellationToken)
         {
             if (model.FromDate.HasValue && model.ToDate.HasValue && model.FromDate > model.ToDate)
-                return BadRequest("FromDate non puo' essere successiva a ToDate.");
+                throw new BadRequestException("FromDate cannot be later than ToDate.");
 
-            var userId = _currentUserService.UserId!.Value;
+            var userId = GetUserId();
 
             var created = await _exportService.RequestExportAsync(userId, model, cancellationToken);
             await _dispatcher.DispatchAsync(created.Id, cancellationToken);
 
             var current = await _exportService.GetByIdAsync(userId, created.Id, cancellationToken);
+            if (current is null)
+                throw new NotFoundException("Export", created.Id);
+
             return AcceptedAtAction(nameof(GetById), new { id = created.Id }, current);
         }
 
@@ -47,7 +51,7 @@ namespace HealthTrace.PL.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetHistory(CancellationToken cancellationToken)
         {
-            var userId = _currentUserService.UserId!.Value;
+            var userId = GetUserId();
             var history = await _exportService.GetHistoryAsync(userId, cancellationToken);
             return Ok(history);
         }
@@ -56,28 +60,41 @@ namespace HealthTrace.PL.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
-            var userId = _currentUserService.UserId!.Value;
+            var userId = GetUserId();
             var export = await _exportService
                                     .GetByIdAsync(userId, id, cancellationToken);
-            return export == null ? NotFound() : Ok(export);
+            if (export is null)
+                throw new NotFoundException("Export", id);
+
+            return Ok(export);
         }
 
         [HttpGet("{id}/download")]
         public async Task<IActionResult> Download(int id, CancellationToken cancellationToken)
         {
-            var userId = _currentUserService.UserId!.Value;
+            var userId = GetUserId();
 
             var export = await _exportService.GetByIdAsync(userId, id, cancellationToken);
-            if (export == null)
-                return NotFound();
+            if (export is null)
+                throw new NotFoundException("Export", id);
 
             if (export.Status != ExportStatus.Completed)
-                return Conflict(new { status = export.Status.ToString(), export.ErrorMessage });
+                throw new ConflictException(
+                    export.ErrorMessage
+                    ?? $"Export {id} is not ready for download (status: {export.Status}).");
 
             var file = await _exportService.GetFileAsync(userId, id, cancellationToken);
-            return file == null
-                ? NotFound()
-                : File(file.Content, file.ContentType, file.FileName);
+            if (file is null)
+                throw new NotFoundException("Export", id);
+
+            return File(file.Content, file.ContentType, file.FileName);
         }
+
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        // Estrae l'id dell'utente autenticato; se il claim manca il gestore
+        // globale risponde 401 senza ripetere il controllo in ogni action.
+        private int GetUserId() => _currentUserService.UserId
+            ?? throw new UnauthorizedException();
     }
 }
