@@ -11,7 +11,7 @@ namespace HealthTrace.PL.API.Handlers.Interfaces
     /// contratto destinato al body della risposta; ogni altra eccezione è un errore
     /// interno e non deve esporre dettagli.
     /// </summary>
-    public interface IProblemDetailsMapper
+    public interface IErrorDetailsMapper
     {
         /// <summary>
         /// Restituisce i dati del problema corrispondenti all'eccezione ricevuta.
