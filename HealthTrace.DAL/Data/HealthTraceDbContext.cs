@@ -16,6 +16,8 @@ namespace HealthTrace.DAL.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Symptom> Symptoms { get; set; }
 
+        public DbSet<ExportRequest> ExportRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -44,6 +46,23 @@ namespace HealthTrace.DAL.Data
                     .WithMany()
                     .HasForeignKey(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ExportRequest>(entity =>
+            {
+                entity.Property(e => e.FileName).HasMaxLength(200);
+                entity.Property(e => e.BlobName).HasMaxLength(300);
+                entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+
+                entity.HasIndex(e => e.UserId);
+
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
             });
         }
 

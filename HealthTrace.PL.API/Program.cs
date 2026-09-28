@@ -57,6 +57,13 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
+builder.Services.AddScoped<ISymptomService, SymptomService>();  
+
+builder.Services.AddScoped<IPdfGenerator, PdfGenerator>();
+builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IExportJobDispatcher, InlineExportJobDispatcher>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 builder.Services.AddHttpContextAccessor();
