@@ -1,13 +1,14 @@
-﻿using System.Linq.Expressions;
-using AutoMapper;
+﻿using AutoMapper;
 using FluentValidation;
+using HealthTrace.BLL.Exceptions;
 using HealthTrace.BLL.Models;
-using HealthTrace.BLL.Results;
 using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services;
 using HealthTrace.DAL.Entities;
 using HealthTrace.DAL.Repositories.Interfaces;
 using Moq;
+using System.Linq.Expressions;
+using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 
 namespace HealthTrace.Test.BLL.Services
 {
@@ -53,16 +54,17 @@ namespace HealthTrace.Test.BLL.Services
         [InlineData(Username, null)]
         [InlineData(Username, "")]
         [InlineData(Username, " ")]
-        public async Task LoginAsync_MissingUsernameOrPassword_ReturnsValidationError(
-            string? username, string? password)
+        public async Task LoginAsync_MissingUsernameOrPassword_ThrowsValidationException(
+           string? username, string? password)
         {
             var service = CreateService();
 
-            var result = await service.LoginAsync(username!, password!);
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.LoginAsync(username!, password!));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal("Username and password are required", Assert.Single(result.Errors));
+            // Credenziali mancanti: l'errore non è su un campo specifico, quindi
+            // UserService lo colloca sotto la chiave di fallback "general".
+            Assert.Equal("Username and password are required", Assert.Single(ex.Errors["general"]));
 
             _repository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -70,41 +72,41 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task LoginAsync_UserNotFound_ReturnsUnauthorized()
+        public async Task LoginAsync_UserNotFound_ThrowsUnauthorizedException()
         {
             SetupFindAsync(NoUsers);
             var service = CreateService();
 
-            var result = await service.LoginAsync(Username, PlainPassword);
+            var ex = await Assert.ThrowsAsync<UnauthorizedException>(
+                () => service.LoginAsync(Username, PlainPassword));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.Unauthorized, result.Type);
-            Assert.Equal("Invalid username or password", Assert.Single(result.Errors));
+            // UnauthorizedException non ha un dizionario di errori: il messaggio
+            // contrattuale è il contenuto dell'eccezione, che finisce in Detail.
+            Assert.Equal("Invalid username or password", ex.Message);
 
             // Nessun utente trovato: VerifyPassword non deve nemmeno essere chiamato.
             _passwordHasher.Verify(h => h.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public async Task LoginAsync_WrongPassword_ReturnsUnauthorized()
+        public async Task LoginAsync_WrongPassword_ThrowsUnauthorizedException()
         {
             var user = new User { Username = Username, PasswordHash = HashedPassword };
             SetupFindAsync(new[] { user });
             _passwordHasher.Setup(h => h.VerifyPassword(HashedPassword, PlainPassword)).Returns(false);
             var service = CreateService();
 
-            var result = await service.LoginAsync(Username, PlainPassword);
+            var ex = await Assert.ThrowsAsync<UnauthorizedException>(
+                () => service.LoginAsync(Username, PlainPassword));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.Unauthorized, result.Type);
             // Stesso messaggio del caso "utente non trovato": non deve rivelare quale dei due è sbagliato.
-            Assert.Equal("Invalid username or password", Assert.Single(result.Errors));
+            Assert.Equal("Invalid username or password", ex.Message);
 
             _passwordHasher.Verify(h => h.VerifyPassword(HashedPassword, PlainPassword), Times.Once);
         }
 
         [Fact]
-        public async Task LoginAsync_ValidCredentials_ReturnsOkWithMappedUser()
+        public async Task LoginAsync_ValidCredentials_ReturnsMappedUser()
         {
             var user = new User { Id = 42, Username = Username, PasswordHash = HashedPassword };
             SetupFindAsync(new[] { user });
@@ -114,11 +116,8 @@ namespace HealthTrace.Test.BLL.Services
 
             var result = await service.LoginAsync(Username, PlainPassword);
 
-            Assert.True(result.Success);
-            Assert.Equal(ServiceResultType.Success, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(42, result.Data.Id);
-            Assert.Equal(Username, result.Data.Username);
+            Assert.Equal(42, result.Id);
+            Assert.Equal(Username, result.Username);
 
             _passwordHasher.Verify(h => h.VerifyPassword(HashedPassword, PlainPassword), Times.Once);
             // Il login non deve mai ri-hashare la password.
@@ -143,9 +142,8 @@ namespace HealthTrace.Test.BLL.Services
             var service = CreateService();
             using var cts = new CancellationTokenSource();
 
-            var result = await service.LoginAsync(Username, PlainPassword, cts.Token);
+            await service.LoginAsync(Username, PlainPassword, cts.Token);
 
-            Assert.True(result.Success);
             Assert.Equal(cts.Token, findToken);
 
             // Il login è in sola lettura: non deve mai scrivere sul repository.
@@ -156,15 +154,16 @@ namespace HealthTrace.Test.BLL.Services
         // --- Overload LoginModel ---
 
         [Fact]
-        public async Task LoginAsync_NullModel_ReturnsValidationError()
+        public async Task LoginAsync_NullModel_ThrowsValidationException()
         {
             var service = CreateService();
 
-            var result = await service.LoginAsync((LoginModel)null!);
+            // L'overload è async, quindi il throw sul model nullo finisce nella Task
+            // restituita: serve ThrowsAsync, non Throws.
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.LoginAsync((LoginModel)null!));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal("Username and password are required", Assert.Single(result.Errors));
+            Assert.Equal("Username and password are required", Assert.Single(ex.Errors["general"]));
 
             _repository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -174,16 +173,15 @@ namespace HealthTrace.Test.BLL.Services
         [InlineData("", "")]
         [InlineData(" ", PlainPassword)]
         [InlineData(Username, " ")]
-        public async Task LoginAsync_WithModelMissingCredentials_ReturnsValidationError(
+        public async Task LoginAsync_WithModelMissingCredentials_ThrowsValidationException(
             string username, string password)
         {
             var service = CreateService();
 
-            var result = await service.LoginAsync(new LoginModel { Username = username, Password = password });
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.LoginAsync(new LoginModel { Username = username, Password = password }));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal("Username and password are required", Assert.Single(result.Errors));
+            Assert.Equal("Username and password are required", Assert.Single(ex.Errors["general"]));
 
             _repository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -202,9 +200,7 @@ namespace HealthTrace.Test.BLL.Services
             var model = new LoginModel { Username = Username, Password = PlainPassword };
             var result = await service.LoginAsync(model);
 
-            Assert.True(result.Success);
-            Assert.NotNull(result.Data);
-            Assert.Equal(42, result.Data.Id);
+            Assert.Equal(42, result.Id);
         }
     }
 }
