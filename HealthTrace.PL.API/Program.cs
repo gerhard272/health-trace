@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSerilogLogging(builder.Configuration, builder.Environment);
 
 // Add services to the container.
 
@@ -26,6 +27,11 @@ builder.Services.AddDbContext<HealthTraceDbContext>(options =>
         builder.Configuration.GetConnectionString("HealthTraceDb")
     )
 );
+
+builder.Services.AddOptions<FileLoggingOptions>()
+    .Bind(builder.Configuration.GetSection(FileLoggingOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddOptions<BlobStorageOptions>()
     .Bind(builder.Configuration.GetSection(BlobStorageOptions.SectionName))
@@ -65,7 +71,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddSingleton<IProblemDetailsMapper, ExceptionStatusMapper>();
+builder.Services.AddSingleton<IErrorDetailsMapper, ExceptionStatusMapper>();
 
 var app = builder.Build();
 

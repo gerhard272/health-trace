@@ -12,7 +12,7 @@ namespace HealthTrace.PL.API.Handlers
     /// body; per le eccezioni non previste il body resta generico e i dettagli restano
     /// solo nel log, con il traceId come chiave di correlazione.
     /// </summary>
-    public sealed class ExceptionStatusMapper : IProblemDetailsMapper
+    public sealed class ExceptionStatusMapper : IErrorDetailsMapper
     {
         public ProblemDetails Map(Exception exception) => exception switch
         {
