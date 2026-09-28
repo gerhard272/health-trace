@@ -3,20 +3,20 @@ using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using HealthTrace.BLL.Models;
-using HealthTrace.BLL.Results;
 using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services;
 using HealthTrace.DAL.Entities;
 using HealthTrace.DAL.Repositories.Interfaces;
 using Moq;
-
-
+using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
     /// Class di test per la classe UserService, focalizzata sul metodo RegisterAsync.
     /// Collegata al file UserService.cs nella cartella BLL/Services.
+    /// Gli esiti negativi non si asseriscono più sul valore di ritorno: RegisterAsync
+    /// lancia ValidationException, quindi i test verificano tipo e contenuto dell'eccezione.
     /// </summary>
     public class UserServiceRegisterTests
     {
@@ -83,16 +83,17 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task RegisterAsync_InvalidModel_ReturnsValidationError()
+        public async Task RegisterAsync_InvalidModel_ThrowsValidationException()
         {
             SetupValidator(false, "Username is required", "CF not valid");
             var service = CreateService();
 
-            var result = await service.RegisterAsync(ValidModel());
+            // SetupValidator usa PropertyName vuota, quindi gli errori finiscono sotto
+            // la chiave di fallback "general": è il ramo che deve coprire.
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.RegisterAsync(ValidModel()));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal(new[] { "Username is required", "CF not valid" }, result.Errors);
+            Assert.Equal(new[] { "Username is required", "CF not valid" }, ex.Errors["general"]);
 
             _repository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -102,17 +103,18 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task RegisterAsync_DuplicateUsername_ReturnsValidationError()
+        public async Task RegisterAsync_DuplicateUsername_ThrowsValidationException()
         {
             SetupValidator(true);
             SetupFindAsync(new[] { new User { Username = "mario.rossi" } });
             var service = CreateService();
 
-            var result = await service.RegisterAsync(ValidModel());
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.RegisterAsync(ValidModel()));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal("Username already in use", Assert.Single(result.Errors));
+            // Username e codice fiscale non hanno un campo proprio: l'unicità è un
+            // errore sul modulo intero, quindi sotto "general".
+            Assert.Equal("Username already in use", Assert.Single(ex.Errors["general"]));
             Assert.Equal(1, _findCallCount);
 
             _passwordHasher.Verify(h => h.HashPassword(It.IsAny<string>()), Times.Never);
@@ -121,18 +123,17 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task RegisterAsync_DuplicateFiscalCode_ReturnsValidationError()
+        public async Task RegisterAsync_DuplicateFiscalCode_ThrowsValidationException()
         {
             var model = ValidModel();
             SetupValidator(true);
             SetupFindAsync(NoUsers, new[] { new User { CF = model.CF } });
             var service = CreateService();
 
-            var result = await service.RegisterAsync(model);
+            var ex = await Assert.ThrowsAsync<AppValidationException>(
+                () => service.RegisterAsync(model));
 
-            Assert.False(result.Success);
-            Assert.Equal(ServiceResultType.ValidationError, result.Type);
-            Assert.Equal("Fiscal code already registered", Assert.Single(result.Errors));
+            Assert.Equal("Fiscal code already registered", Assert.Single(ex.Errors["general"]));
             Assert.Equal(2, _findCallCount);
 
             _passwordHasher.Verify(h => h.HashPassword(It.IsAny<string>()), Times.Never);
@@ -141,7 +142,7 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task RegisterAsync_ValidModel_ReturnsOkWithMappedUser()
+        public async Task RegisterAsync_ValidModel_ReturnsMappedUser()
         {
             SetupValidator(true);
             SetupFindAsync(NoUsers, NoUsers);
@@ -149,12 +150,9 @@ namespace HealthTrace.Test.BLL.Services
             _passwordHasher.Setup(h => h.HashPassword(PlainPassword)).Returns(HashedPassword);
             var service = CreateService();
 
-            var result = await service.RegisterAsync(ValidModel());
+            var user = await service.RegisterAsync(ValidModel());
 
-            Assert.True(result.Success);
-            Assert.Equal(ServiceResultType.Success, result.Type);
-            Assert.NotNull(result.Data);
-            Assert.Equal(42, result.Data.Id);
+            Assert.Equal(42, user.Id);
             Assert.Equal(2, _findCallCount);
 
             _passwordHasher.Verify(h => h.HashPassword(PlainPassword), Times.Once);
@@ -168,7 +166,7 @@ namespace HealthTrace.Test.BLL.Services
             var model = ValidModel();
             SetupValidator(true);
             SetupFindAsync(NoUsers, NoUsers);
-            SetupMapper(new User {Username = model.Username, CF = model.CF}, new UserModel { Id = 1 });
+            SetupMapper(new User { Username = model.Username, CF = model.CF }, new UserModel { Id = 1 });
             _passwordHasher.Setup(h => h.HashPassword(PlainPassword)).Returns(HashedPassword);
 
             User? persisted = null;
@@ -178,9 +176,8 @@ namespace HealthTrace.Test.BLL.Services
                 .Returns(Task.CompletedTask);
 
             var service = CreateService();
-            var result = await service.RegisterAsync(model);
+            await service.RegisterAsync(model);
 
-            Assert.True(result.Success);
             Assert.NotNull(persisted);
             Assert.Equal(HashedPassword, persisted.PasswordHash);
             Assert.NotEqual(model.Password, persisted.PasswordHash);
@@ -217,9 +214,8 @@ namespace HealthTrace.Test.BLL.Services
             var service = CreateService();
             using var cts = new CancellationTokenSource();
 
-            var result = await service.RegisterAsync(ValidModel(), cts.Token);
+            await service.RegisterAsync(ValidModel(), cts.Token);
 
-            Assert.True(result.Success);
             Assert.Equal(cts.Token, findToken);
             Assert.Equal(cts.Token, addToken);
             Assert.Equal(cts.Token, saveToken);

@@ -1,4 +1,7 @@
-﻿using System.Net.Http.Headers;
+﻿using HealthTrace.BLL.Exceptions;
+using HealthTrace.BLL.Models;
+using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -45,14 +48,31 @@ namespace HealthTrace.PL.API.Security
                 var username = credentials[..separatorIndex];
                 var password = credentials[(separatorIndex + 1)..];
 
-                var result = await _userService.LoginAsync(username, password, Context.RequestAborted);
-                if (!result.Success || result.Data is null)
+                UserModel user;
+                try
+                {
+                    user = await _userService.LoginAsync(username, password, Context.RequestAborted);
+                }
+                catch (AppValidationException ex)
+                {
+                    // Username o password vuoti: l'header è malformato o il client non sa
+                    // inviare credenziali. Non è un tentativo di autenticazione fallito,
+                    // quindi niente Warning e nessun dettaglio in log.
+                    Logger.LogDebug("Basic auth header without usable credentials: {ErrorMessage}", ex.Message);
+                    return AuthenticateResult.Fail("Missing credentials");
+                }
+                catch (UnauthorizedException)
+                {
+                    // Credenziali non valide: evento atteso, Warning senza stack trace,
+                    // coerente con il trattamento dei 4xx in GlobalExceptionHandler.
+                    Logger.LogWarning("Basic authentication failed for {Username}", username);
                     return AuthenticateResult.Fail("Invalid credentials");
+                }
 
                 var claims = new[]
                 {
-                    new Claim(ClaimTypes.Name, result.Data.Username),
-                    new Claim(ClaimTypes.NameIdentifier, result.Data.Id.ToString())
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                 };
 
                 var identity = new ClaimsIdentity(claims, Scheme.Name);
