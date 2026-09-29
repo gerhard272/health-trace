@@ -2,7 +2,7 @@
 using HealthTrace.BLL.Models;
 using HealthTrace.DAL.Entities;
 
-namespace HealthTrace.PL.API.Configurations
+namespace HealthTrace.BLL.Mapping
 {
     public class MappingProfile : Profile
     {

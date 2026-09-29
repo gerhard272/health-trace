@@ -66,6 +66,7 @@ namespace HealthTrace.BLL.Services
             var request = await _exportRepository.GetByIdAsync(exportRequestId, cancellationToken);
 
             // Idempotenza: le code (at-least-once) possono consegnare lo stesso messaggio due volte
+            // questo lo controlla e se è già in lavorazione si ferma
             if (request == null || 
                 request.Status is ExportStatus.Completed or ExportStatus.Processing)
                 return;
