@@ -222,6 +222,27 @@ namespace HealthTrace.Test.BLL.Services
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(OtherUserId)]
+        public async Task UpdateAsync_BodyWithDifferentUserId_KeepsAuthenticatedOwner(int bodyUserId)
+        {
+            // Il mapper copia anche UserId dal body: 0 se il client non lo invia (violazione
+            // della FK), l'id di un altro utente se lo manipola. Il servizio deve ripristinare
+            // il proprietario autenticato, come fa CreateAsync.
+            var entity = ValidEntity();
+            var model = ValidModel();
+            model.UserId = bodyUserId;
+            SetupFindAsync(new[] { entity });
+            _mapper.Setup(m => m.Map(model, entity)).Callback(() => entity.UserId = model.UserId);
+            var service = CreateService();
+
+            await service.UpdateAsync(UserId, model);
+
+            Assert.Equal(UserId, entity.UserId);
+            _repository.Verify(r => r.Update(It.Is<Symptom>(s => s.UserId == UserId)), Times.Once);
+        }
+
         [Fact]
         public async Task UpdateAsync_PropagatesCancellationToken()
         {

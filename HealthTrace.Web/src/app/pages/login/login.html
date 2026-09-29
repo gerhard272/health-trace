@@ -4,7 +4,8 @@
   <img src="/images/healthtrace-logo.png" alt="HealthTrace" class="mx-auto mb-4 h-40 w-auto">
 
   <div>
-    <p *ngIf="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
+    <p *ngIf="registered && !errorMessage()" class="text-sm text-green-700">Registration completed. You can now log in.</p>
+    <p *ngIf="errorMessage()" class="text-sm text-red-600">{{ errorMessage() }}</p>
   </div>
 
   <div>
@@ -32,6 +33,8 @@
     </div>
   </div>
 
-  <button class="w-full rounded-md bg-gradient-to-r from-[#0E7D73] to-[#3485BF] px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" type="submit" [disabled]="loginForm.invalid">Login</button>
+  <button class="w-full rounded-md bg-gradient-to-r from-[#0E7D73] to-[#3485BF] px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" type="submit" [disabled]="loginForm.invalid || submitting()">Login</button>
+
+  <p class="text-center text-sm text-gray-600">Don't have an account? <a routerLink="/register" class="font-medium text-[#0E7D73] hover:underline">Register</a></p>
 
 </form>

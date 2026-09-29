@@ -1,0 +1,40 @@
+<section class="mx-auto max-w-2xl space-y-6">
+
+  <a routerLink="/symptoms" class="text-sm font-medium text-[#0E7D73] hover:underline">← Back to my symptoms</a>
+
+  @if (errorMessage()) {
+    <p class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="text-sm text-gray-600">Loading symptom…</p>
+  } @else if (notFound()) {
+    <div class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-600">
+      <p>This symptom does not exist or has been deleted.</p>
+    </div>
+  } @else if (symptom(); as symptom) {
+    <article class="space-y-6 rounded-lg border border-gray-200 bg-white p-4 shadow-md sm:p-6">
+      <div>
+        <p class="text-sm text-gray-500">{{ symptom.eventDate | date: 'EEEE dd/MM/yyyy, HH:mm' }}</p>
+        <h1 class="mt-1 text-2xl font-semibold text-gray-900">{{ symptom.eventName }}</h1>
+      </div>
+
+      <div>
+        <h2 class="mb-1 text-sm font-medium text-gray-700">Description</h2>
+        <p class="whitespace-pre-line text-gray-800">{{ symptom.description || 'No description.' }}</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+        @if (confirmingDelete()) {
+          <span class="mr-2 text-sm text-gray-700">Delete this symptom? This cannot be undone from the app.</span>
+          <button type="button" (click)="confirmDelete()" [disabled]="deleting()" class="rounded-md bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 disabled:opacity-50">Yes, delete</button>
+          <button type="button" (click)="confirmingDelete.set(false)" [disabled]="deleting()" class="rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-100">Cancel</button>
+        } @else {
+          <a [routerLink]="['/symptoms', symptom.id, 'edit']" class="rounded-md bg-gradient-to-r from-[#0E7D73] to-[#3485BF] px-4 py-2 font-medium text-white transition hover:opacity-90">Edit</a>
+          <button type="button" (click)="confirmingDelete.set(true)" class="rounded-md border border-red-300 px-4 py-2 font-medium text-red-600 transition hover:bg-red-50">Delete</button>
+        }
+      </div>
+    </article>
+  }
+
+</section>

@@ -63,6 +63,9 @@ namespace HealthTrace.BLL.Services
                 return null;
             }
             _mapper.Map(model, entity);
+            //come in CreateAsync, il proprietario resta l'utente autenticato: lo UserId del body
+            //viene ignorato (se mancante varrebbe 0, se diverso sposterebbe il sintomo a un altro utente)
+            entity.UserId = userId;
             _symptomRepository.Update(entity);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<SymptomModel>(entity);
