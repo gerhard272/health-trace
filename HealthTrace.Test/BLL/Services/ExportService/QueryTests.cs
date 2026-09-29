@@ -59,6 +59,22 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         }
 
         [Fact]
+        public async Task GetHistoryAsync_NoExports_ReturnsEmptyList()
+        {
+            // Utente che non ha mai chiesto un export: il caso normale di un account
+            // nuovo, non un errore. La lista deve arrivare vuota al controller, che la
+            // deve poter tradurre in un 200 con elenco vuoto e non in un 404.
+            SetupExportFindAsync(NoExports);
+            var service = CreateService();
+
+            var result = await service.GetHistoryAsync(UserId);
+
+            Assert.NotNull(result);
+            Assert.Empty(result);
+            VerifyNoErrorLogged();
+        }
+
+        [Fact]
         public async Task GetHistoryAsync_ValidUser_PropagatesCancellationToken()
         {
             SetupExportFindAsync(NoExports);
