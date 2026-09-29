@@ -377,19 +377,34 @@ namespace HealthTrace.Test.BLL.Services
         }
 
         [Fact]
-        public async Task GetByNameAsync_PredicateMatchesExactNameAndOwner()
+        public async Task GetByNameAsync_PredicateMatchesPartOfTheNameAndOwner()
         {
             SetupFindAsync(NoSymptoms);
             var service = CreateService();
 
-            await service.GetByNameAsync(UserId, EventName);
+            // Ricerca per sottostringa: con il confronto esatto "testa" non trovava
+            // "mal di testa" e il filtro della UI sembrava non funzionare.
+            await service.GetByNameAsync(UserId, "testa");
 
             Assert.NotNull(_capturedPredicate);
             var predicate = _capturedPredicate!.Compile();
 
-            Assert.True(predicate(new Symptom { UserId = UserId, EventName = EventName }));
+            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "mal di testa" }));
+            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "testa" }));
             Assert.False(predicate(new Symptom { UserId = UserId, EventName = "tosse" }));
-            Assert.False(predicate(new Symptom { UserId = OtherUserId, EventName = EventName }));
+            Assert.False(predicate(new Symptom { UserId = OtherUserId, EventName = "mal di testa" }));
+        }
+
+        [Fact]
+        public async Task GetByNameAsync_IgnoresSurroundingSpaces()
+        {
+            SetupFindAsync(NoSymptoms);
+            var service = CreateService();
+
+            await service.GetByNameAsync(UserId, "  " + EventName + " ");
+
+            var predicate = _capturedPredicate!.Compile();
+            Assert.True(predicate(new Symptom { UserId = UserId, EventName = EventName }));
         }
     }
 }

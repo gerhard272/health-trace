@@ -91,10 +91,12 @@ namespace HealthTrace.BLL.Services
             return _mapper.Map<IReadOnlyList<SymptomModel>>(entities);
         }
 
-        //metodo per ottenere un sintomo specifico di un utente dal nome dell'evento
+        //metodo per cercare i sintomi di un utente per nome dell'evento: basta una parte del nome
+        //("testa" trova "Mal di testa"); maiuscole/minuscole le ignora la collation del database
         public async Task<IReadOnlyList<SymptomModel>> GetByNameAsync(int userId, string eventName, CancellationToken cancellationToken = default)
         {
-            var entities = await _symptomRepository.FindAsync(s => s.UserId == userId && s.EventName == eventName, cancellationToken);
+            var term = eventName.Trim();
+            var entities = await _symptomRepository.FindAsync(s => s.UserId == userId && s.EventName.Contains(term), cancellationToken);
             return _mapper.Map<IReadOnlyList<SymptomModel>>(entities);
         }
 
