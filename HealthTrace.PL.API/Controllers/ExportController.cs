@@ -13,6 +13,9 @@ namespace HealthTrace.PL.API.Controllers
     [Route("api/exports")]
     public class ExportsController : ControllerBase
     {
+        private const string JsonContentType = "application/json";
+        private const string PdfContentType = "application/pdf";
+
         private readonly IExportService _exportService;
         private readonly IExportJobDispatcher _dispatcher;
         private readonly ICurrentUserService _currentUserService;
@@ -27,50 +30,97 @@ namespace HealthTrace.PL.API.Controllers
             _currentUserService = currentUserService;
         }
 
-        // richiede un export, risponde 202 e id
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        // POST: api/exports/request
+        // Richiede un export, risponde 202 con lo stato corrente e il Location del GetById.
+
         [HttpPost("request")]
-        public async Task<IActionResult> RequestExport(ExportRequestCreateModel model,
+        [Produces(JsonContentType)]
+        [ProducesResponseType(typeof(ExportRequestModel), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ExportRequestModel>> RequestExport(
+            [FromBody] ExportRequestCreateModel model,
             CancellationToken cancellationToken)
         {
+            // L'utente si ricava per primo: una richiesta non autenticata deve
+            // ricevere 401 anche se il body contiene un intervallo non valido.
+            var userId = GetUserId();
+
             if (model.FromDate.HasValue && model.ToDate.HasValue && model.FromDate > model.ToDate)
                 throw new BadRequestException("FromDate cannot be later than ToDate.");
-
-            var userId = GetUserId();
 
             var created = await _exportService.RequestExportAsync(userId, model, cancellationToken);
             await _dispatcher.DispatchAsync(created.Id, cancellationToken);
 
-            var current = await _exportService.GetByIdAsync(userId, created.Id, cancellationToken);
-            if (current is null)
-                throw new NotFoundException("Export", created.Id);
+            // La rilettura serve solo a restituire lo stato aggiornato dal dispatcher
+            // (con quello inline l'export può già essere Completed o Failed). La
+            // richiesta è stata comunque registrata: se la rilettura non trova nulla
+            // si risponde con il modello appena creato invece che con un 404.
+            var current = await _exportService.GetByIdAsync(userId, created.Id, cancellationToken)
+                ?? created;
 
             return AcceptedAtAction(nameof(GetById), new { id = created.Id }, current);
         }
 
-        // cronologia export
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        // GET: api/exports
+        // Cronologia degli export dell'utente autenticato.
+
         [HttpGet]
-        public async Task<IActionResult> GetHistory(CancellationToken cancellationToken)
+        [Produces(JsonContentType)]
+        [ProducesResponseType(typeof(IReadOnlyList<ExportRequestModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IReadOnlyList<ExportRequestModel>>> GetHistory(
+            CancellationToken cancellationToken)
         {
             var userId = GetUserId();
             var history = await _exportService.GetHistoryAsync(userId, cancellationToken);
             return Ok(history);
         }
 
-        // Stato di un singolo export
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        // GET: api/exports/5
+        // Stato di un singolo export.
+
+        [HttpGet("{id:int}")]
+        [Produces(JsonContentType)]
+        [ProducesResponseType(typeof(ExportRequestModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ExportRequestModel>> GetById(
+            [FromRoute] int id,
+            CancellationToken cancellationToken)
         {
             var userId = GetUserId();
-            var export = await _exportService
-                                    .GetByIdAsync(userId, id, cancellationToken);
+            var export = await _exportService.GetByIdAsync(userId, id, cancellationToken);
             if (export is null)
                 throw new NotFoundException("Export", id);
 
             return Ok(export);
         }
 
-        [HttpGet("{id}/download")]
-        public async Task<IActionResult> Download(int id, CancellationToken cancellationToken)
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        // GET: api/exports/5/download
+        // Scarica il PDF di un export completato; 409 finché non è pronto o se è fallito.
+
+        [HttpGet("{id:int}/download")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, PdfContentType)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Download(
+            [FromRoute] int id,
+            CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
