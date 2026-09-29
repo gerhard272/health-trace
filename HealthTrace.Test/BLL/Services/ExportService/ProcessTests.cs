@@ -119,6 +119,51 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         }
 
         [Fact]
+        public async Task ProcessExportAsync_WithOnlyFromDate_AppliesLowerBoundAndNoUpperBound()
+        {
+            // ToDate null: il service deve costruire toExclusive = null e lasciare il
+            // corto-circuito "toExclusive == null" tagliare fuori il secondo filtro.
+            var entity = ValidEntity(fromDate: new DateTime(2026, 9, 10), toDate: null);
+            var service = SetupProcessing(entity);
+            SetupSymptomFindAsync(NoSymptoms);
+
+            await service.ProcessExportAsync(ExportRequestId);
+
+            Assert.NotNull(_capturedSymptomPredicate);
+            var predicate = _capturedSymptomPredicate!.Compile();
+
+            Assert.False(predicate(ValidSymptom(1, eventDate: new DateTime(2026, 9, 9, 23, 59, 59))));
+            Assert.True(predicate(ValidSymptom(1, eventDate: new DateTime(2026, 9, 10, 0, 0, 0))));
+            // L'asserzione che chiude il buco: senza limite superiore, un sintomo di
+            // tre anni dopo deve entrare. Se il corto-circuito fosse invertito, qui
+            // tornerebbe false e l'export "dal 10/09" perderebbe l'intero seguito.
+            Assert.True(predicate(ValidSymptom(1, eventDate: new DateTime(2029, 12, 31, 0, 0, 0))));
+            Assert.False(predicate(ValidSymptom(1, userId: OtherUserId)));
+        }
+
+        [Fact]
+        public async Task ProcessExportAsync_WithOnlyToDate_AppliesUpperBoundAndNoLowerBound()
+        {
+            // Simmetrico del caso precedente: FromDate null porta from = null, e il
+            // corto-circuito "from == null" deve escludere il filtro sul limite basso.
+            var entity = ValidEntity(fromDate: null, toDate: new DateTime(2026, 9, 12));
+            var service = SetupProcessing(entity);
+            SetupSymptomFindAsync(NoSymptoms);
+
+            await service.ProcessExportAsync(ExportRequestId);
+
+            Assert.NotNull(_capturedSymptomPredicate);
+            var predicate = _capturedSymptomPredicate!.Compile();
+
+            Assert.True(predicate(ValidSymptom(1, eventDate: new DateTime(2026, 9, 12, 23, 59, 59))));
+            Assert.False(predicate(ValidSymptom(1, eventDate: new DateTime(2026, 9, 13, 0, 0, 0))));
+            // Come sopra: senza limite inferiore tutto il passato deve entrare, altrimenti
+            // l'export "fino al 12/09" perderebbe la storia clinica precedente.
+            Assert.True(predicate(ValidSymptom(1, eventDate: new DateTime(2000, 1, 1, 0, 0, 0))));
+            Assert.False(predicate(ValidSymptom(1, userId: OtherUserId)));
+        }
+
+        [Fact]
         public async Task ProcessExportAsync_Symptoms_AreOrderedByEventDateBeforeMapping()
         {
             var early = ValidSymptom(1, eventDate: new DateTime(2026, 1, 1));
@@ -322,12 +367,22 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var service = SetupProcessing(ValidEntity());
             using var cts = new CancellationTokenSource();
 
+            // I due SaveChangesAsync ricevono il token insieme a tutto il resto:
+            // senza, l'annullamento arriverebbe ai collaboratori ma la scrittura
+            // partirebbe comunque, e al database arriverebbe uno stato obsoleto.
+            // Il setup va DOPO SetupProcessing perche' quello chiama CreateService,
+            // che registra gia' SaveChangesAsync e verrebbe qui sovrascritto.
+            var saveTokens = new List<CancellationToken>();
+            _unitOfWork
+                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Callback<CancellationToken>(ct => saveTokens.Add(ct))
+                .ReturnsAsync(1);
+
             await service.ProcessExportAsync(ExportRequestId, cts.Token);
 
-            // Il token raggiunge tutte le chiamate: l'annullamento dell'host deve
-            // interrompere il lavoro prima che venga scritto uno stato obsoleto.
             Assert.Equal(cts.Token, _capturedGetByIdToken);
             Assert.Equal(cts.Token, _capturedSymptomToken);
+            Assert.Equal(new[] { cts.Token, cts.Token }, saveTokens);
             _blobStorageService.Verify(b => b.UploadAsync(
                 ContainerName, It.IsAny<string>(), It.IsAny<Stream>(),
                 PdfContentType, cts.Token), Times.Once);
