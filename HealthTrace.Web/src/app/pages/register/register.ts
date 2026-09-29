@@ -12,6 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { RegisterRequest } from '../../models/auth.models';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('password')?.value;
@@ -35,6 +36,7 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
 export class Register {
   registerForm: FormGroup;
   errorMessage: string | null = null;
+  validationErrors: Record<string, string[]> = {};  
   constructor(private formBuilder: FormBuilder, private authService: AuthService) {
     this.registerForm = this.formBuilder.group({
       username: ['', [Validators.required, Validators.maxLength(50)]],
@@ -42,10 +44,12 @@ export class Register {
       passwordConfirmation: ['', [Validators.required]],
       firstName: ['', [Validators.required, Validators.maxLength(50)]],
       lastName: ['', [Validators.required, Validators.maxLength(50)]],
-      cf: ['', [Validators.required,
+      cf: ['', [
+        Validators.required,
         Validators.minLength(16),
         Validators.maxLength(16),
-        Validators.pattern(/^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/)]],
+        Validators.pattern(/^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/)
+      ] ],
       birthDate: [''],
       birthPlace: [''],
     }, { validators: passwordMatchValidator }); //init nel costruttore
@@ -53,14 +57,20 @@ export class Register {
   }
   onSubmit(): void {
     this.errorMessage = null; //reset dell'errore prima di inviare la richiesta
+    this.validationErrors = {}; //reset degli errori di validazione prima di inviare la richiesta
     if (this.registerForm.valid) {
       const registerRequest: RegisterRequest = this.registerForm.getRawValue(); //restituzione completa dei valori del form
       this.authService.register(registerRequest).subscribe({
         next: () => { //callback per gestire la risposta positiva della registrazione
           // Gestione del successo della registrazione
         },
-        error: () => {
-          this.errorMessage = 'An error occurred while registering. Please try again.';
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 400 && error.error?.errors) {
+            this.validationErrors = error.error.errors;
+            this.errorMessage = 'Please correct the validation errors.';
+          } else {
+            this.errorMessage = 'An error occurred while registering. Please try again.';
+          }
         }
       });
     } else {

@@ -2,7 +2,8 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { LoginRequest } from '../../models/auth.models'; 
+import { LoginRequest } from '../../models/auth.models';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   imports: [ReactiveFormsModule, CommonModule],
@@ -29,9 +30,12 @@ export class Login {
         next: (user) => {
           console.log('Login successful', user);
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 401) {
+            this.errorMessage = 'Username or password is incorrect.';
+          }
           console.error('Login failed', error);
-          this.errorMessage = 'Username or password is incorrect.';
+          
         }
       });
     } else {
