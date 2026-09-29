@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="HealthTrace.BLL/HealthTrace.BLL.csproj" Id="d30a7a65-9c05-4b09-88c2-ef160073aa5b" />
   <Project Path="HealthTrace.DAL/HealthTrace.DAL.csproj" Id="9516c144-14a3-449f-909e-20420788f656" />
+  <Project Path="HealthTrace.Functions/HealthTrace.Functions.csproj" Id="34864488-3bb4-4b2f-9c5c-d1eac0314523" />
   <Project Path="HealthTrace.PL.API/HealthTrace.PL.API.csproj" Id="e11ac091-6e3e-4778-b05e-5759c5db7b4f" />
   <Project Path="HealthTrace.Test/HealthTrace.Test.csproj" Id="4b8f0c1d-2a6e-4f35-9c7b-5e1a3d84f620" />
 </Solution>

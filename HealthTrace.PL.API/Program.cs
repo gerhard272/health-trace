@@ -4,6 +4,7 @@ using HealthTrace.BLL.Security;
 using HealthTrace.BLL.Services;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.BLL.Validations;
+using HealthTrace.BLL.Mapping;
 using HealthTrace.DAL;
 using HealthTrace.DAL.Data;
 using HealthTrace.DAL.Repositories;
@@ -63,7 +64,7 @@ builder.Services.AddScoped<ISymptomService, SymptomService>();
 
 builder.Services.AddScoped<IPdfGenerator, PdfGenerator>();
 builder.Services.AddScoped<IExportService, ExportService>();
-builder.Services.AddScoped<IExportJobDispatcher, InlineExportJobDispatcher>();
+builder.Services.AddScoped<IExportJobDispatcher, QueueExportJobDispatcher>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 builder.Services.AddHttpContextAccessor();
