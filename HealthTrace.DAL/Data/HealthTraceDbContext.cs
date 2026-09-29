@@ -46,6 +46,10 @@ namespace HealthTrace.DAL.Data
                     .WithMany()
                     .HasForeignKey(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // Soft delete: i sintomi cancellati (IsDeleted = true) sono esclusi
+                // automaticamente da tutte le query, come per ExportRequest.
+                entity.HasQueryFilter(s => !s.IsDeleted);
             });
 
             modelBuilder.Entity<ExportRequest>(entity =>
