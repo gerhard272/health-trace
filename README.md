@@ -4,7 +4,7 @@ A cloud-based web app for keeping a **personal symptom diary** and exporting it 
 
 Users sign up, log their symptoms (event, description, date and time) and request a PDF export of the whole diary, a date range or a hand-picked selection of entries. The PDF is generated in the background by an **Azure Function** and stored in **Azure Blob Storage**; the data lives in an **Azure SQL Database**. All three run in a dedicated Azure resource group.
 
-> Portfolio project. The backend is .NET 10 (ASP.NET Core Web API + Azure Functions isolated worker), the frontend is Angular 22 with Tailwind CSS 4.
+> Team portfolio project (see [Credits](#credits)). The backend is .NET 10 (ASP.NET Core Web API + Azure Functions isolated worker), the frontend is Angular 22 with Tailwind CSS 4.
 
 ## Features
 
@@ -233,3 +233,11 @@ Beyond Azure, the project was also practice in layered architecture (PL/BLL/DAL,
 ## Workflow
 
 The project was developed on Azure DevOps (Boards + Repos): work on `feature/*` (or `test/*`) branches, integrate through pull requests into `dev` and `main`, and link work items in commit messages (`closes #<id>`).
+
+## Credits
+
+HealthTrace was built as a team project by:
+
+- **Gerhard Pirretti**
+- **Davide Barbieri**
+- **Edoardo Martino**
