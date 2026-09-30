@@ -1,9 +1,9 @@
 ﻿namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Eccezione per risorse non trovate (404).
-    /// ResourceName identifica il tipo di risorsa, Key l'identificativo
-    /// richiesto: entrambi alimentano il body strutturato del 404 nel handler.
+    /// Exception for resources that were not found (404).
+    /// ResourceName identifies the resource type, Key the requested
+    /// identifier: both feed the structured 404 body in the handler.
     /// </summary>
     public class NotFoundException : AppException
     {

@@ -5,14 +5,14 @@ import { environment } from '../../environments/environment';
 
 import { Symptom, SymptomFilter, SymptomRequest } from '../models/symptom.models';
 
-//wrapper per le 5 chiamate CRUD di /api/Symptom; l'header Basic Auth lo aggiunge l'interceptor
+//wrapper for the 5 CRUD calls of /api/Symptom; the interceptor adds the Basic Auth header
 @Injectable({ providedIn: 'root' })
 export class SymptomService {
   private readonly apiUrl = environment.apiUrl + '/api/Symptom';
 
   constructor(private http: HttpClient) { }
 
-  //date e name sono mutuamente esclusivi: con entrambi l'API risponde 400
+  //date and name are mutually exclusive: with both the API returns 400
   getAll(filter: SymptomFilter = {}): Observable<Symptom[]> {
     let params = new HttpParams();
     if (filter.date) {
@@ -32,7 +32,7 @@ export class SymptomService {
     return this.http.post<Symptom>(this.apiUrl, request);
   }
 
-  //l'API controlla che l'id della rotta coincida con quello del body
+  //the API checks that the route id matches the body id
   update(id: number, request: SymptomRequest): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}`, { ...request, id });
   }

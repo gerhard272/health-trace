@@ -27,7 +27,7 @@ const passwordMatchValidator: ValidatorFn = (control: AbstractControl): Validati
   return password === passwordConfirmation ? null : { passwordMismatch: true };
 };
 
-//stessa regola del RegisterModelValidator: la data di nascita non può essere futura
+//same rule as RegisterModelValidator: the birth date cannot be in the future
 const notInFutureValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   if (!control.value) {
     return null;
@@ -46,8 +46,8 @@ const notInFutureValidator: ValidatorFn = (control: AbstractControl): Validation
 
 export class Register {
   registerForm: FormGroup;
-  //signal e non campi semplici: l'app è zoneless, quindi un campo cambiato dentro la
-  //subscribe non aggiornerebbe la vista
+  //signals rather than plain fields: the app is zoneless, so a field changed inside
+  //subscribe would not update the view
   errorMessage = signal<string | null>(null);
   validationErrors = signal<Record<string, string[]>>({});
   submitting = signal(false);
@@ -66,9 +66,9 @@ export class Register {
       ] ],
       birthDate: ['', [notInFutureValidator]],
       birthPlace: [''],
-    }, { validators: passwordMatchValidator }); //init nel costruttore
+    }, { validators: passwordMatchValidator }); //initialized in the constructor
 
-    //il codice fiscale è validato in maiuscolo (qui e nell'API): lo si converte mentre si scrive
+    //the fiscal code is validated in upper case (here and in the API): convert it while typing
     const cfControl = this.registerForm.get('cf')!;
     cfControl.valueChanges.subscribe((value: string | null) => {
       const upper = value?.toUpperCase() ?? '';
@@ -78,12 +78,12 @@ export class Register {
     });
   }
   onSubmit(): void {
-    this.errorMessage.set(null); //reset dell'errore prima di inviare la richiesta
-    this.validationErrors.set({}); //reset degli errori di validazione prima di inviare la richiesta
+    this.errorMessage.set(null); //reset the error before sending the request
+    this.validationErrors.set({}); //reset the validation errors before sending the request
     if (this.registerForm.valid) {
-      const formValue = this.registerForm.getRawValue(); //restituzione completa dei valori del form
-      //i campi facoltativi vuoti vanno inviati come null: una stringa vuota non è una
-      //data valida per il DateOnly dell'API e la richiesta verrebbe rifiutata con 400
+      const formValue = this.registerForm.getRawValue(); //all the form values
+      //empty optional fields must be sent as null: an empty string is not a
+      //valid date for the API's DateOnly and the request would be rejected with 400
       const registerRequest: RegisterRequest = {
         ...formValue,
         birthDate: formValue.birthDate || undefined,
@@ -91,7 +91,7 @@ export class Register {
       };
       this.submitting.set(true);
       this.authService.register(registerRequest).subscribe({
-        next: () => { //callback per gestire la risposta positiva della registrazione
+        next: () => { //successful registration callback
           this.submitting.set(false);
           this.router.navigate(['/login'], { queryParams: { registered: true } });
         },
@@ -107,7 +107,7 @@ export class Register {
         }
       });
     } else {
-      this.registerForm.markAllAsTouched(); //se il form non è valido, segna tutti i campi come toccati per mostrare gli errori di validazione
+      this.registerForm.markAllAsTouched(); //if the form is invalid, mark all fields as touched to show the validation errors
     }
   }
 }

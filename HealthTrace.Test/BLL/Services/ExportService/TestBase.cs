@@ -11,18 +11,18 @@ using Moq;
 
 namespace HealthTrace.Test.BLL.Services.ExportService
 {
-    // L'alias sta qui, dentro il corpo della namespace, e non in cima al file. Il nome
-    // semplice "ExportService" e' anche il nome di questa namespace figlia di
-    // ...BLL.Services, quindi la risoluzione ci arriva gia' legata alla namespace prima
-    // di valutare gli using della compilation unit, che stanno piu' in fuori: un alias
-    // messo in alto non verrebbe mai consultato e l'errore CS0118 ricomparirebbe.
+    // The alias lives here, inside the namespace body, and not at the top of the file. The
+    // simple name "ExportService" is also the name of this child namespace of
+    // ...BLL.Services, so name resolution already binds it to the namespace before
+    // evaluating the compilation unit usings, which are further out: an alias
+    // placed at the top would never be consulted and error CS0118 would come back.
     using ExportService = HealthTrace.BLL.Services.ExportService;
     /// <summary>
-    /// Scaffolding condiviso dai test di ExportService, che e' il service piu' articolato
-    /// del BLL: 5 metodi, 7 collaboratori e due repository risolti dal UnitOfWork dentro
-    /// il suo costruttore. Ogni file di test eredita da qui i mock, le factory e gli
-    /// helper di arrange, cos' i test si limitano al proprio scenario.
-    /// La classe e' astratta e non contiene [Fact]: condivide il scaffolding, non i casi.
+    /// Scaffolding shared by the ExportService tests, the most complex service
+    /// in the BLL: 5 methods, 7 collaborators and two repositories resolved from the UnitOfWork in
+    /// its constructor. Every test file inherits mocks, factories and arrange
+    /// helpers from here, so the tests stick to their own scenario.
+    /// The class is abstract and has no [Fact]: it shares the scaffolding, not the cases.
     /// </summary>
     public abstract class TestBase
     {
@@ -46,9 +46,9 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         protected readonly Mock<IMapper> _mapper = new();
         protected readonly Mock<ILogger<ExportService>> _logger = new();
 
-        // ExportService chiama FindAsync su due repository diversi: la cronologia e la
-        // richiesta di proprieta' passano da _exportRepository, la selezione dei sintomi
-        // da _symptomRepository, quindi i predicati vanno catturati separatamente.
+        // ExportService calls FindAsync on two different repositories: the history and the
+        // ownership lookup go through _exportRepository, symptom selection
+        // through _symptomRepository, so the predicates are captured separately.
         protected Expression<Func<ExportRequest, bool>>? _capturedExportPredicate;
         protected Expression<Func<Symptom, bool>>? _capturedSymptomPredicate;
         protected CancellationToken? _capturedGetByIdToken;
@@ -112,17 +112,17 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
         protected ExportService CreateService()
         {
-            // I due repository sono risolti dal UnitOfWork dentro il costruttore di
-            // ExportService: se un setup manca, il repository arriva null al service
-            // e fallisce piu' a valle, dentro ProcessExportAsync.
+            // Both repositories are resolved from the UnitOfWork inside the ExportService
+            // constructor: if a setup is missing, the repository reaches the service as null
+            // and fails further downstream, inside ProcessExportAsync.
             _unitOfWork.Setup(u => u.Repository<ExportRequest>()).Returns(_exportRepository.Object);
             _unitOfWork.Setup(u => u.Repository<Symptom>()).Returns(_symptomRepository.Object);
             _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            // AddAsync e' chiamato solo da RequestExportAsync: la cattura qui evita che
-            // ogni test debba risettare il mock solo per ispezionare l'entita' accodata.
-            // Nota bene: e' una setup che i test possono sovrascrivere a piacere, perche'
-            // CreateService() va comunque chiamato per primo, non per ultimo.
+            // AddAsync is only called by RequestExportAsync: capturing it here saves
+            // every test from re-setting the mock just to inspect the queued entity.
+            // Note: it is a setup the tests can override at will, because
+            // CreateService() must be called first anyway, not last.
             _addedEntity = null;
             _exportRepository
                 .Setup(r => r.AddAsync(It.IsAny<ExportRequest>(), It.IsAny<CancellationToken>()))
@@ -139,9 +139,9 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         }
 
         /// <summary>
-        /// Compone il percorso felice di ProcessExportAsync: nessun sintomo, PDF generato
-        /// e upload riusciti. Rimane al test da pilotare solo cio' che gli interessa
-        /// (captor, stato iniziale, eccezioni). Usata solo da ProcessTests.
+        /// Builds the happy path of ProcessExportAsync: no symptoms, PDF generated
+        /// and upload successful. The test only has to drive what it cares about
+        /// (captors, initial state, exceptions). Used only by ProcessTests.
         /// </summary>
         protected ExportService SetupProcessing(ExportRequest request)
         {
@@ -153,7 +153,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             return CreateService();
         }
 
-        // --- Setup: repository ---
+        // --- Setup: repositories ---
 
         protected void SetupGetByIdAsync(ExportRequest? result)
         {
@@ -190,7 +190,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
                 .ReturnsAsync(result);
         }
 
-        // --- Setup: collaboratori ---
+        // --- Setup: collaborators ---
 
         protected void SetupSymptomListMapping(IReadOnlyList<SymptomModel> models)
         {
@@ -224,14 +224,14 @@ namespace HealthTrace.Test.BLL.Services.ExportService
                         _uploadedContainer = container;
                         _uploadedBlobName = blobName;
                         _uploadedContentType = contentType;
-                        // Lo stream viene chiuso dalla using solo al ritorno dal service:
-                        // qui e' ancora aperto e contiene i byte del PDF.
+                        // The stream is closed by the using only when the service returns:
+                        // here it is still open and contains the PDF bytes.
                         _uploadedLength = content.Length;
                     })
                 .ReturnsAsync("https://healthtrace.blob.core.windows.net/exports/report.pdf");
         }
 
-        // Usata solo da QueryTests, per gli scenari di download.
+        // Used only by QueryTests, for the download scenarios.
         protected void SetupBlobDownload(Stream content)
         {
             _downloadedContainer = null;

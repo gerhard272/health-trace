@@ -3,12 +3,12 @@ using HealthTrace.BLL.Exceptions;
 namespace HealthTrace.Test.BLL.Exceptions
 {
     /// <summary>
-    /// Copre ValidationException, l'unica eccezione che porta un payload oltre al messaggio: il
-    /// dizionario campo -> errori che diventa il corpo del 400. Nessun mock: tipo senza dipendenze.
-    /// Il messaggio conta quanto il payload, perche' finisce nel Detail della risposta: i
-    /// costruttori che non lo ricevono impongono "Validation failed.".
-    /// Nota: FluentValidation non viene importato, quindi ValidationException risolve senza
-    /// ambigua' alla classe del BLL, come nella nota dei file in produzione.
+    /// Covers ValidationException, the only exception that carries a payload besides the message: the
+    /// field -> errors dictionary that becomes the 400 body. No mocks: a type without dependencies.
+    /// The message matters as much as the payload, because it ends up in the response Detail: the
+    /// constructors that do not receive one enforce "Validation failed.".
+    /// Note: FluentValidation is not imported, so ValidationException resolves unambiguously
+    /// to the BLL class, as described in the note in the production files.
     /// </summary>
     public class ValidationExceptionTests
     {
@@ -21,8 +21,8 @@ namespace HealthTrace.Test.BLL.Exceptions
         [Fact]
         public void Parameterless_UsesDefaultMessageAndEmptyErrors()
         {
-            // Puo' essere lanciata senza alcun errore da campo: Errors resta vuota, non null, altrimenti
-            // il client riceverebbe un corpo senza la struttura attesa.
+            // It can be thrown without any field error: Errors stays empty, not null, otherwise
+            // the client would receive a body without the expected structure.
             var exception = new ValidationException();
 
             Assert.Equal(DefaultMessage, exception.Message);
@@ -65,9 +65,9 @@ namespace HealthTrace.Test.BLL.Exceptions
         [Fact]
         public void ErrorsDictionary_IsNotAffectedByLaterChangesToTheSource()
         {
-            // Il dizionario viene ricreato nel costruttore: il servizio che ha costruito la
-            // ValidationFailureResult puo' continuare a usare la sua raccolta senza modificare
-            // l'eccezione che sta per attraversare i layer.
+            // The dictionary is recreated in the constructor: the service that built the
+            // ValidationFailureResult can keep using its collection without changing
+            // the exception that is about to cross the layers.
             var errors = new Dictionary<string, string[]> { [FieldKey] = [FieldMessage] };
 
             var exception = new ValidationException(errors);
@@ -81,9 +81,9 @@ namespace HealthTrace.Test.BLL.Exceptions
         [Fact]
         public void ErrorsDictionary_SharesTheErrorArraysByReference()
         {
-            // Limite noto della copia, che e' superficiale: il dizionario e' ricreato ma gli array dei
-            // messaggi restano condivisi, quindi una sostituzione nell'array di origine si vede
-            // nell'eccezione. Il test documenta il comportamento, non lo approva.
+            // Known limitation of the copy, which is shallow: the dictionary is recreated but the message
+            // arrays stay shared, so a replacement in the source array is visible
+            // in the exception. The test documents the behavior, it does not endorse it.
             var messages = new[] { FieldMessage };
             var exception = new ValidationException(new Dictionary<string, string[]> { [FieldKey] = messages });
 
@@ -97,8 +97,8 @@ namespace HealthTrace.Test.BLL.Exceptions
         [InlineData(GeneralKey, GeneralMessage)]
         public void FieldAndErrorOverload_KeepsFieldAndMessageVerbatim(string field, string error)
         {
-            // Usato anche per errori senza campo proprio, sotto la chiave "general": la chiave deve
-            // arrivare al client cosi' com'e', altrimenti il frontend non sa dove mostrare l'errore.
+            // Also used for errors without a field of their own, under the "general" key: the key must
+            // reach the client as is, otherwise the frontend does not know where to show the error.
             var exception = new ValidationException(field, error);
 
             Assert.Equal(DefaultMessage, exception.Message);

@@ -27,7 +27,7 @@ public class ProcessExportFunction
         if (!int.TryParse(message.MessageText, out var exportRequestId))
         {
             _logger.LogError("Invalid queue message, expected an integer export request id: {MessageText}", message.MessageText);
-            return; // non ritentare un messaggio strutturalmente invalido
+            return; // do not retry a structurally invalid message
         }
 
         _logger.LogInformation("Processing export request {ExportRequestId}", 

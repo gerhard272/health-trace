@@ -15,11 +15,11 @@ import { getErrorMessage } from '../../utils/http-error';
 })
 export class Login {
   loginForm: FormGroup;
-  //signal e non campi semplici: l'app è zoneless, quindi un campo cambiato dentro la
-  //subscribe non aggiornerebbe la vista
+  //signals rather than plain fields: the app is zoneless, so a field changed inside
+  //subscribe would not update the view
   errorMessage = signal<string | null>(null);
   submitting = signal(false);
-  //arrivo dalla registrazione appena completata
+  //coming from a just-completed registration
   readonly registered: boolean;
 
   constructor(
@@ -36,14 +36,14 @@ export class Login {
   }
 
   onSubmit(): void {
-    this.errorMessage.set(null); //reset dell'errore prima di inviare la richiesta
+    this.errorMessage.set(null); //reset the error before sending the request
     if (this.loginForm.valid) {
-      const loginRequest: LoginRequest = this.loginForm.getRawValue(); //restituzione completa dei valori del form
+      const loginRequest: LoginRequest = this.loginForm.getRawValue(); //all the form values
       this.submitting.set(true);
       this.authService.login(loginRequest).subscribe({
         next: () => {
           this.submitting.set(false);
-          //torna alla pagina che aveva chiesto il login, altrimenti al diario
+          //go back to the page that required the login, otherwise to the diary
           const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
           this.router.navigateByUrl(returnUrl?.startsWith('/') ? returnUrl : '/symptoms');
         },
@@ -57,7 +57,7 @@ export class Login {
         }
       });
     } else {
-      this.loginForm.markAllAsTouched(); //se il form non è valido, segna tutti i campi come toccati per mostrare gli errori di validazione
+      this.loginForm.markAllAsTouched(); //if the form is invalid, mark all fields as touched to show the validation errors
     }
   }
 }

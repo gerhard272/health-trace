@@ -4,11 +4,11 @@ using Serilog.Formatting.Compact;
 namespace HealthTrace.PL.API.Configurations
 {
     /// <summary>
-    /// Costruzione della configurazione Serilog. La console riceve sempre gli eventi,
-    /// il file solo fuori da Development, dove serve alla diagnosi a posteriori e in
-    /// locale può solo ingombrare. I livelli minimi e gli override per categoria
-    /// arrivano dalla sezione "Serilog" di appsettings.json. Va registrata sui servizi
-    /// del builder prima del build.
+    /// Builds the Serilog configuration. The console always receives events,
+    /// the file only outside Development, where it is useful for post-mortem diagnosis
+    /// (locally it would only get in the way). Minimum levels and per-category overrides
+    /// come from the "Serilog" section of appsettings.json. It must be registered on the
+    /// builder services before Build().
     /// </summary>
     public static class LoggingSetup
     {

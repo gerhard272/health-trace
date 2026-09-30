@@ -12,9 +12,9 @@ using Microsoft.Extensions.Options;
 namespace HealthTrace.PL.API.Security
 {
     /// <summary>
-    /// Gestisce l'autenticazione di base (Basic Authentication) per l'applicazione.
-    /// Estende la classe AuthenticationHandler e implementa la logica per autenticare
-    /// gli utenti utilizzando le credenziali fornite nell'header Authorization della richiesta HTTP.
+    /// Handles Basic Authentication for the application.
+    /// Extends AuthenticationHandler and implements the logic to authenticate
+    /// users with the credentials provided in the Authorization header of the HTTP request.
     /// </summary>
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
@@ -55,16 +55,16 @@ namespace HealthTrace.PL.API.Security
                 }
                 catch (AppValidationException ex)
                 {
-                    // Username o password vuoti: l'header è malformato o il client non sa
-                    // inviare credenziali. Non è un tentativo di autenticazione fallito,
-                    // quindi niente Warning e nessun dettaglio in log.
+                    // Empty username or password: the header is malformed or the client cannot
+                    // send credentials. This is not a failed authentication attempt,
+                    // so no Warning and no details in the log.
                     Logger.LogDebug("Basic auth header without usable credentials: {ErrorMessage}", ex.Message);
                     return AuthenticateResult.Fail("Missing credentials");
                 }
                 catch (UnauthorizedException)
                 {
-                    // Credenziali non valide: evento atteso, Warning senza stack trace,
-                    // coerente con il trattamento dei 4xx in GlobalExceptionHandler.
+                    // Invalid credentials: an expected event, Warning without stack trace,
+                    // consistent with how GlobalExceptionHandler treats 4xx.
                     Logger.LogWarning("Basic authentication failed for {Username}", username);
                     return AuthenticateResult.Fail("Invalid credentials");
                 }

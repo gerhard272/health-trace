@@ -2,9 +2,9 @@ using System.Reflection;
 using HealthTrace.BLL.Exceptions;
 using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
-// Il namespace di questo file replica quello del codice sotto test, quindi la
-// regola di risoluzione dei namespace annidati non trova da sola il controller:
-// la dichiarazione esplicita serve.
+// This file's namespace mirrors that of the code under test, so the
+// nested namespace resolution rule does not find the controller on its own:
+// the explicit declaration is needed.
 using HealthTrace.PL.API.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,12 +15,12 @@ using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 namespace HealthTrace.Test.PL.API.Controllers
 {
     /// <summary>
-    /// Classe di test per AuthController. Il controller non contiene logica propria:
-    /// delega a IUserService e traduce l'esito positivo in un ActionResult. I test
-    /// verificano quindi tre cose: lo status code e il corpo della risposta di successo,
-    /// il passaggio invariato di modello e CancellationToken al servizio, e il fatto
-    /// che le eccezioni applicative non vengano intercettate qui, perché la loro
-    /// traduzione in ProblemDetails spetta al gestore globale (ExceptionStatusMapper).
+    /// Test class for AuthController. The controller has no logic of its own:
+    /// it delegates to IUserService and turns the successful outcome into an ActionResult. The tests
+    /// therefore check three things: the status code and body of the success response,
+    /// that the model and CancellationToken are passed unchanged to the service, and
+    /// that application exceptions are not caught here, because translating them
+    /// into ProblemDetails is the global handler's job (ExceptionStatusMapper).
     /// </summary>
     public class AuthControllerTests
     {
@@ -74,7 +74,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Equal(StatusCodes.Status201Created, created.StatusCode);
             Assert.Equal(nameof(AuthController.Register), created.ActionName);
 
-            // Il corpo è esattamente il modello restituito dal servizio, senza copie.
+            // The body is exactly the model returned by the service, no copies.
             Assert.Same(user, created.Value);
         }
 
@@ -91,8 +91,8 @@ namespace HealthTrace.Test.PL.API.Controllers
             await controller.Register(model, cts.Token);
 
             _userService.Verify(s => s.RegisterAsync(model, cts.Token), Times.Once);
-            // La registrazione non deve passare da nessun altro metodo del servizio,
-            // in particolare non dal Create generico, che non gestisce l'hash.
+            // Registration must not go through any other service method,
+            // in particular not through the generic Create, which does not handle the hash.
             _userService.VerifyNoOtherCalls();
         }
 
@@ -105,8 +105,8 @@ namespace HealthTrace.Test.PL.API.Controllers
                 .ThrowsAsync(exception);
             var controller = CreateController();
 
-            // Il controller non deve catturare l'eccezione né trasformarla in un
-            // BadRequest: la traduzione è compito del gestore globale.
+            // The controller must not catch the exception nor turn it into a
+            // BadRequest: translation is the global handler's job.
             var thrown = await Assert.ThrowsAsync<AppValidationException>(
                 () => controller.Register(ValidRegisterModel(), CancellationToken.None));
 
@@ -143,8 +143,8 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             await controller.Login(model, cts.Token);
 
-            // Il controller usa l'overload con LoginModel: quello username/password
-            // non deve essere chiamato direttamente.
+            // The controller uses the LoginModel overload: the username/password one
+            // must not be called directly.
             _userService.Verify(s => s.LoginAsync(model, cts.Token), Times.Once);
             _userService.VerifyNoOtherCalls();
         }
@@ -179,15 +179,15 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Same(exception, thrown);
         }
 
-        // --- Attributi di routing e autorizzazione ---
+        // --- Routing and authorization attributes ---
 
         [Fact]
         public void Controller_IsAnonymousApiControllerWithAuthRoute()
         {
             var type = typeof(AuthController);
 
-            // Register e Login devono essere raggiungibili senza autenticazione:
-            // senza AllowAnonymous nessun utente potrebbe ottenere l'accesso.
+            // Register and Login must be reachable without authentication:
+            // without AllowAnonymous no user could ever log in.
             Assert.NotNull(type.GetCustomAttribute<AllowAnonymousAttribute>());
             Assert.NotNull(type.GetCustomAttribute<ApiControllerAttribute>());
             Assert.Equal("api/[controller]", type.GetCustomAttribute<RouteAttribute>()?.Template);
@@ -202,7 +202,7 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             var httpPost = method.GetCustomAttribute<HttpPostAttribute>();
 
-            // POST perché le credenziali viaggiano nel corpo, mai nella query string.
+            // POST because credentials travel in the body, never in the query string.
             Assert.NotNull(httpPost);
             Assert.Equal(expectedTemplate, httpPost.Template);
         }

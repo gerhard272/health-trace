@@ -5,10 +5,10 @@ using System.Text;
 namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Rappresenta un'eccezione personalizzata per l'applicazione.
-    /// Tutte le eccezioni specifiche dell'applicazione
-    /// dovrebbero derivare da questa classe.
-    /// Astratta per impedire l'istanza diretta.
+    /// Represents a custom application exception.
+    /// All application-specific exceptions
+    /// should derive from this class.
+    /// Abstract to prevent direct instantiation.
     /// </summary>
     public abstract class AppException : Exception
     {

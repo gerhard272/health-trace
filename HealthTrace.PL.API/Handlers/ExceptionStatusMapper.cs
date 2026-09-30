@@ -5,13 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace HealthTrace.PL.API.Handlers
 {
     /// <summary>
-    /// Traduce i tipi di eccezione del BLL nel ProblemDetails (RFC 9457) restituito al
+    /// Translates BLL exception types into the ProblemDetails (RFC 9457) returned to the
     /// client: ValidationException → 400, UnauthorizedException → 401,
-    /// NotFoundException → 404, ConflictException → 409, ogni altra AppException → 400,
-    /// tutto il resto → 500.
-    /// Il messaggio delle AppException fa parte del contratto di API e viene esposto nel
-    /// body; per le eccezioni non previste il body resta generico e i dettagli restano
-    /// solo nel log, con il traceId come chiave di correlazione.
+    /// NotFoundException → 404, ConflictException → 409, any other AppException → 400,
+    /// everything else → 500.
+    /// The AppException message is part of the API contract and is exposed in the
+    /// body; for unexpected exceptions the body stays generic and the details stay
+    /// in the log only, with the traceId as correlation key.
     /// </summary>
     public sealed class ExceptionStatusMapper : IErrorDetailsMapper
     {

@@ -1,8 +1,8 @@
-//questo script serve per intercettare le richieste HTTP e aggiungere l'intestazione di
-//autorizzazione Basic Auth se le credenziali sono presenti nella sessionStorage.
-//Se le credenziali non sono presenti, la richiesta viene inviata senza modifiche.
-//Un 401 su una chiamata protetta significa credenziali non più valide: si fa logout
-//e si torna al login.
+//intercepts HTTP requests and adds the Basic Auth Authorization
+//header if the credentials are present in sessionStorage.
+//If the credentials are not present, the request is sent unchanged.
+//A 401 on a protected call means the credentials are no longer valid: log out
+//and go back to the login page.
 
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -16,17 +16,17 @@ export const basicAuthInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const credentials = authService.getCredentials();
 
-  //l'header va solo verso la nostra API: le credenziali non devono finire su altri host
+  //the header only goes to our API: credentials must never reach other hosts
   const isApiRequest = req.url.startsWith(environment.apiUrl);
   const isAuthRequest = req.url.startsWith(`${environment.apiUrl}/api/Auth/`);
 
   const request = credentials && isApiRequest
     ? req.clone({ setHeaders: { Authorization: `Basic ${credentials}` } })
-    : req; //credenziali non presenti o host esterno: invia la richiesta senza modifiche
+    : req; //no credentials or external host: send the request unchanged
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      //il 401 di login resta al componente, che mostra "credenziali errate"
+      //the login 401 is left to the component, which shows "invalid credentials"
       if (error instanceof HttpErrorResponse && error.status === 401 && isApiRequest && !isAuthRequest) {
         authService.logout();
         router.navigate(['/login'], { queryParams: { returnUrl: router.url } });

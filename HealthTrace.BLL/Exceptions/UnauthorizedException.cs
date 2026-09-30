@@ -1,9 +1,9 @@
 ﻿namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Eccezione per accesso non autorizzato o token non valido (401).
-    /// Messaggio di default overridabile: il handler del Task 101
-    /// mappa il tipo sullo status code, il body usa il messaggio.
+    /// Exception for unauthorized access or invalid credentials (401).
+    /// The default message can be overridden: the global handler
+    /// maps the type to the status code, the body uses the message.
     /// </summary>
     public class UnauthorizedException : AppException
     {

@@ -3,7 +3,7 @@
 namespace HealthTrace.BLL.Security
 {
     /// <summary>
-    /// Il salt viene generato e incorporato nell'hash automaticamente dal pacchetto.
+    /// The salt is generated and embedded in the hash automatically by the package.
     /// </summary>
     public class PasswordHasher : IPasswordHasher
     {

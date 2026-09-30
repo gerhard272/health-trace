@@ -7,7 +7,7 @@ import { SymptomService } from '../../services/symptom.service';
 import { Symptom } from '../../models/symptom.models';
 import { getErrorMessage } from '../../utils/http-error';
 
-//lista del diario: filtri per data o per nome ed eliminazione con conferma in riga
+//diary list: filters by date or by name and inline delete with confirmation
 @Component({
   imports: [ReactiveFormsModule, RouterLink, DatePipe],
   selector: 'app-symptoms',
@@ -20,7 +20,7 @@ export class Symptoms {
   loading = signal(false);
   errorMessage = signal<string | null>(null);
   hasActiveFilter = signal(false);
-  pendingDeleteId = signal<number | null>(null); //riga in attesa di conferma
+  pendingDeleteId = signal<number | null>(null); //row waiting for confirmation
   deletingId = signal<number | null>(null);
 
   constructor(private formBuilder: FormBuilder, private symptomService: SymptomService) {
@@ -36,7 +36,7 @@ export class Symptoms {
     const name: string = (this.filterForm.get('name')?.value ?? '').trim();
     this.errorMessage.set(null);
 
-    //l'API accetta un solo filtro alla volta: meglio dirlo qui che ricevere un 400
+    //the API accepts only one filter at a time: better to say it here than to get a 400
     if (date && name) {
       this.errorMessage.set('Filter by date or by name, not both.');
       return;
@@ -46,7 +46,7 @@ export class Symptoms {
     this.hasActiveFilter.set(!!date || !!name);
     this.symptomService.getAll({ date: date || undefined, name: name || undefined }).subscribe({
       next: (symptoms) => {
-        //i più recenti in alto, come in un diario
+        //most recent first, as in a diary
         this.symptoms.set([...symptoms].sort((a, b) => b.eventDate.localeCompare(a.eventDate)));
         this.loading.set(false);
       },
@@ -77,7 +77,7 @@ export class Symptoms {
       next: () => this.removeFromList(id),
       error: (error: HttpErrorResponse) => {
         if (error.status === 404) {
-          //già eliminato (ad esempio da un'altra scheda): basta toglierlo dalla lista
+          //already deleted (e.g. from another tab): just remove it from the list
           this.removeFromList(id);
           return;
         }

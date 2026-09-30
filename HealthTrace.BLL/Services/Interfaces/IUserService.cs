@@ -3,29 +3,29 @@
 namespace HealthTrace.BLL.Services.Interfaces
 {
     /// <summary>
-    /// Contratto dell'utente: estende IGenericService, il CRUD generico già
-    /// implementato da GenericService e aggiunge RegisterAsync e LoginAsync.
-    /// Nota: per gli utenti il Create/Update generico NON va usato (l'hash non transita in UserModel):
-    /// la creazione passa esclusivamente da RegisterAsync
-    /// il login passa esclusivamente da LoginAsync
-    /// Gli esiti negativi non si esprimono con un valore di ritorno: RegisterAsync e
-    /// LoginAsync restituiscono il modello oppure lanciano l'eccezione applicativa che
-    /// ne descrive l'esito, e sarà ExceptionStatusMapper a tradurla in status code e
-    /// corpo ProblemDetails.
+    /// User contract: extends IGenericService, the generic CRUD already
+    /// implemented by GenericService, and adds RegisterAsync and LoginAsync.
+    /// Note: the generic Create/Update must NOT be used for users (the hash does not travel in UserModel):
+    /// users are created only through RegisterAsync
+    /// and log in only through LoginAsync.
+    /// Failures are not expressed as return values: RegisterAsync and
+    /// LoginAsync return the model or throw the application exception that
+    /// describes the outcome, and ExceptionStatusMapper translates it into a status code and
+    /// ProblemDetails body.
     /// </summary>
     public interface IUserService : IGenericService<UserModel>
     {
         /// <exception cref="HealthTrace.BLL.Exceptions.ValidationException">
-        /// Modello non valido, username o codice fiscale già registrati.
+        /// Invalid model, username or fiscal code already registered.
         /// </exception>
         Task<UserModel> RegisterAsync(RegisterModel model, CancellationToken cancellationToken = default);
 
         /// <exception cref="HealthTrace.BLL.Exceptions.ValidationException">
-        /// Username o password mancanti.
+        /// Missing username or password.
         /// </exception>
         /// <exception cref="HealthTrace.BLL.Exceptions.UnauthorizedException">
-        /// Credenziali non valide. Lo stesso esito copre utente inesistente e password
-        /// errata, per non rivelare quale dei due è sbagliato.
+        /// Invalid credentials. The same outcome covers a non-existent user and a wrong
+        /// password, so as not to reveal which of the two is wrong.
         /// </exception>
         Task<UserModel> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
 

@@ -1,22 +1,22 @@
-//interfacce per i sintomi: rispecchiano SymptomModel lato API (JSON in camelCase)
+//symptom interfaces: they mirror SymptomModel on the API side (camelCase JSON)
 
 export interface Symptom {
   id: number;
   userId: number;
   eventName: string;
   description?: string | null;
-  eventDate: string; //data/ora ISO senza fuso, es. "2026-09-23T08:30:00"
+  eventDate: string; //ISO date/time without time zone, e.g. "2026-09-23T08:30:00"
 }
 
-//corpo di POST e PUT: userId non si invia, l'API lo ricava dall'utente autenticato
+//body of POST and PUT: userId is not sent, the API takes it from the authenticated user
 export interface SymptomRequest {
   eventName: string;
   description?: string | null;
   eventDate: string;
 }
 
-//filtri della lista: l'API accetta date oppure name, mai entrambi
+//list filters: the API accepts date or name, never both
 export interface SymptomFilter {
-  date?: string; //formato yyyy-MM-dd
+  date?: string; //yyyy-MM-dd format
   name?: string;
 }

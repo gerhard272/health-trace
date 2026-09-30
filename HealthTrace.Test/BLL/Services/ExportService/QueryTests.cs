@@ -5,12 +5,12 @@ using Moq;
 namespace HealthTrace.Test.BLL.Services.ExportService
 {
     /// <summary>
-    /// Test dei metodi di lettura: GetHistoryAsync, GetByIdAsync e GetFileAsync.
-    /// I tre condividono il confine di autorizzazione, che qui e' la parte delicata:
-    /// GetOwnedEntityAsync filtra su Id e UserId insieme, e i mock restituiscono sempre
-    /// quello che viene loro chiesto. Percio' i predicati vengono compilati e valutati
-    /// davvero invece di fidarsi del valore di ritorno: se la clausola sul proprietario
-    /// saltasse, un test basato solo sul risultato passerebbe comunque.
+    /// Tests for the read methods: GetHistoryAsync, GetByIdAsync and GetFileAsync.
+    /// All three share the authorization boundary, which is the delicate part here:
+    /// GetOwnedEntityAsync filters on Id and UserId together, and the mocks always return
+    /// whatever they are asked for. So the predicates are actually compiled and evaluated
+    /// instead of trusting the return value: if the owner clause were dropped,
+    /// a test based only on the result would still pass.
     /// </summary>
     public class ExportServiceQueryTests : TestBase
     {
@@ -26,14 +26,14 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             var result = await service.GetHistoryAsync(UserId);
 
-            // La cronologia puo' arrivare disordinata dal database, quindi il service
-            // riordina: dalla piu' recente alla piu' vecchia, unico criterio la data.
+            // The history may come back unordered from the database, so the service
+            // sorts it: newest to oldest, by date only.
             Assert.Equal(new List<int> { newer.Id, older.Id }, result.Select(r => r.Id).ToList());
 
             Assert.NotNull(_capturedExportPredicate);
             var predicate = _capturedExportPredicate!.Compile();
             Assert.True(predicate(newer));
-            // Solo il proprietario: la cronologia di un altro utente non deve mescolarsi.
+            // Owner only: another user's history must not be mixed in.
             Assert.False(predicate(ValidEntity(id: 12, userId: OtherUserId)));
         }
 
@@ -41,17 +41,17 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         public async Task GetHistoryAsync_MixedStatuses_MapsFileNameAndErrorMessage()
         {
             var done = ValidEntity(
-                id: 10, status: ExportStatus.Completed, fileName: "sintomi-20260101-101010.pdf");
+                id: 10, status: ExportStatus.Completed, fileName: "symptoms-20260101-101010.pdf");
             var broken = ValidEntity(id: 11, status: ExportStatus.Failed, errorMessage: "blob irraggiungibile");
             SetupExportFindAsync(new[] { done, broken });
             var service = CreateService();
 
             var result = await service.GetHistoryAsync(UserId);
 
-            // Ogni stato espone i propri campi: un export completato mostra il file,
-            // uno fallito il motivo. Sono campi diversi, non un fallback unico.
+            // Each state exposes its own fields: a completed export shows the file,
+            // a failed one the reason. They are different fields, not a single fallback.
             Assert.Equal(ExportStatus.Completed, result[0].Status);
-            Assert.Equal("sintomi-20260101-101010.pdf", result[0].FileName);
+            Assert.Equal("symptoms-20260101-101010.pdf", result[0].FileName);
             Assert.Null(result[0].ErrorMessage);
             Assert.Equal(ExportStatus.Failed, result[1].Status);
             Assert.Equal("blob irraggiungibile", result[1].ErrorMessage);
@@ -61,9 +61,9 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         [Fact]
         public async Task GetHistoryAsync_NoExports_ReturnsEmptyList()
         {
-            // Utente che non ha mai chiesto un export: il caso normale di un account
-            // nuovo, non un errore. La lista deve arrivare vuota al controller, che la
-            // deve poter tradurre in un 200 con elenco vuoto e non in un 404.
+            // A user who never requested an export: the normal case for a new
+            // account, not an error. The list must reach the controller empty, so it
+            // can turn it into a 200 with an empty list and not a 404.
             SetupExportFindAsync(NoExports);
             var service = CreateService();
 
@@ -83,8 +83,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.GetHistoryAsync(UserId, cts.Token);
 
-            // Una cronologia lunga non deve ignorare l'annullamento della richiesta
-            // HTTP che l'ha innescata, altrimenti la query continua a girare.
+            // A long history must not ignore the cancellation of the HTTP request
+            // that triggered it, otherwise the query keeps running.
             _exportRepository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<ExportRequest, bool>>>(), cts.Token), Times.Once);
         }
@@ -104,8 +104,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             Assert.Equal(ExportRequestId, result!.Id);
             Assert.Equal(ExportStatus.Completed, result.Status);
 
-            // Il predicato deve richiedere Id e UserId insieme: e' il controllo di
-            // proprieta' che impedisce di leggere l'export di un altro utente.
+            // The predicate must require Id and UserId together: it is the ownership
+            // check that prevents reading another user's export.
             Assert.NotNull(_capturedExportPredicate);
             var predicate = _capturedExportPredicate!.Compile();
             Assert.True(predicate(entity));
@@ -116,8 +116,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         [Fact]
         public async Task GetByIdAsync_UnknownRequest_ReturnsNull()
         {
-            // Nessuna corrispondenza: il service restituisce null invece di lanciare,
-            // cosi' il controller puo' tradurlo in 404 senza casi speciali.
+            // No match: the service returns null instead of throwing,
+            // so the controller can turn it into a 404 without special cases.
             SetupExportFindAsync(NoExports);
             var service = CreateService();
 
@@ -136,7 +136,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var entity = ValidEntity(
                 status: ExportStatus.Completed,
                 blobName: $"{UserId}/abc-123.pdf",
-                fileName: "sintomi-20260101-101010.pdf");
+                fileName: "symptoms-20260101-101010.pdf");
             SetupExportFindAsync(new[] { entity });
             SetupBlobDownload(content);
             var service = CreateService();
@@ -145,11 +145,11 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             Assert.NotNull(result);
             Assert.Same(content, result!.Content);
-            Assert.Equal("sintomi-20260101-101010.pdf", result.FileName);
+            Assert.Equal("symptoms-20260101-101010.pdf", result.FileName);
             Assert.Equal(PdfContentType, result.ContentType);
 
-            // Il container viene dalle options e il blob dal record: nessuno dei due
-            // arriva dal client, quindi non c'e' modo di leggere un altro percorso.
+            // The container comes from the options and the blob from the record: neither
+            // comes from the client, so there is no way to read another path.
             Assert.Equal(ContainerName, _downloadedContainer);
             Assert.Equal(entity.BlobName, _downloadedBlobName);
         }
@@ -168,10 +168,10 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             var result = await service.GetFileAsync(UserId, ExportRequestId);
 
-            // Copre sia l'export non completato sia quello completato senza blob:
-            // in entrambi i casi si esce prima di toccare lo storage. Un download
-            // inutilizzato costerebbe traffico e, su Completed senza blob, fallirebbe
-            // con un errore invece di restituire un null pulito.
+            // Covers both the non-completed export and the completed one without a blob:
+            // in both cases we exit before touching storage. A useless download
+            // would cost traffic and, on Completed without a blob, would fail
+            // with an error instead of returning a clean null.
             Assert.Null(result);
             _blobStorageService.Verify(b => b.DownloadAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
@@ -182,8 +182,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         [Fact]
         public async Task GetFileAsync_UnknownRequest_ReturnsNullWithoutDownloading()
         {
-            // Nessuna richiesta corrispondente: stessa uscita silenziosa dei casi
-            // precedenti, senza nemmeno arrivare a valutare i campi dell'entity.
+            // No matching request: same silent exit as the previous
+            // cases, without even evaluating the entity fields.
             SetupExportFindAsync(NoExports);
             var service = CreateService();
 
@@ -198,8 +198,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         [Fact]
         public async Task GetFileAsync_CompletedWithoutFileName_UsesFallbackName()
         {
-            // Un export completato ma privo di nome file consegnerebbe al client una
-            // stringa vuota, che verrebbe mostrata come allegato senza nome.
+            // A completed export without a file name would hand the client an
+            // empty string, which would be shown as an unnamed attachment.
             var entity = ValidEntity(
                 status: ExportStatus.Completed, blobName: "1/abc.pdf", fileName: null);
             SetupExportFindAsync(new[] { entity });
@@ -209,7 +209,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var result = await service.GetFileAsync(UserId, ExportRequestId);
 
             Assert.NotNull(result);
-            Assert.Equal("sintomi.pdf", result!.FileName);
+            Assert.Equal("symptoms.pdf", result!.FileName);
             Assert.Equal(PdfContentType, result.ContentType);
         }
 
@@ -224,8 +224,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.GetFileAsync(UserId, ExportRequestId, cts.Token);
 
-            // Il token arriva sia alla ricerca sia al download: senza quello, un file
-            // grande continuerebbe a scaricarsi dopo l'annullamento della richiesta.
+            // The token reaches both the lookup and the download: without it, a large
+            // file would keep downloading after the request was cancelled.
             Assert.Equal(cts.Token, _downloadedToken);
             _exportRepository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<ExportRequest, bool>>>(), cts.Token), Times.Once);

@@ -65,8 +65,8 @@ namespace HealthTrace.BLL.Services
         {
             var request = await _exportRepository.GetByIdAsync(exportRequestId, cancellationToken);
 
-            // Idempotenza: le code (at-least-once) possono consegnare lo stesso messaggio due volte
-            // questo lo controlla e se è già in lavorazione si ferma
+            // Idempotency: queues are at-least-once and may deliver the same message twice,
+            // so stop here if the request is already being processed or done
             if (request == null || 
                 request.Status is ExportStatus.Completed or ExportStatus.Processing)
                 return;
@@ -93,13 +93,13 @@ namespace HealthTrace.BLL.Services
                     cancellationToken);
 
                 request.BlobName = blobName;
-                request.FileName = $"sintomi-{now:yyyyMMdd-HHmmss}.pdf";
+                request.FileName = $"symptoms-{now:yyyyMMdd-HHmmss}.pdf";
                 request.Status = ExportStatus.Completed;
                 request.ErrorMessage = null;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogError(ex, "Export {ExportRequestId} fallito", exportRequestId);
+                _logger.LogError(ex, "Export {ExportRequestId} failed", exportRequestId);
                 request.Status = ExportStatus.Failed;
                 request.ErrorMessage = Truncate(ex.Message, MaxErrorLength);
             }
@@ -143,7 +143,7 @@ namespace HealthTrace.BLL.Services
             return new ExportFileModel
             {
                 Content = content,
-                FileName = entity.FileName ?? "sintomi.pdf",
+                FileName = entity.FileName ?? "symptoms.pdf",
                 ContentType = PdfContentType
             };
         }

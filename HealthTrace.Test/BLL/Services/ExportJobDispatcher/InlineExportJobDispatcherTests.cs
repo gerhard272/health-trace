@@ -5,13 +5,13 @@ using Moq;
 namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
 {
     /// <summary>
-    /// Copre InlineExportJobDispatcher, l'implementazione che esegue l'export nella stessa
-    /// richiesta HTTP che lo ha richiesto. Non ha logica propria: e' una delega a
-    /// IExportService.ProcessExportAsync, quindi i test verificano cosa viene inoltrato e
-    /// come si comportano le eccezioni. I due punti che un test di delega deve fissare sono
-    /// il CancellationToken (un token perso cambierebbe la cancellazione della richiesta) e
-    /// l'identita' della Task restituita (un async/await aggiunto qui mascherebbe il momento
-    /// vero di completamento del lavoro).
+    /// Covers InlineExportJobDispatcher, the implementation that runs the export in the same
+    /// HTTP request that asked for it. It has no logic of its own: it delegates to
+    /// IExportService.ProcessExportAsync, so the tests check what is forwarded and
+    /// how exceptions behave. The two things a delegation test must pin down are
+    /// the CancellationToken (a lost token would change request cancellation) and
+    /// the identity of the returned Task (an async/await added here would hide the real
+    /// moment the work completes).
     /// </summary>
     public class InlineExportJobDispatcherTests
     {
@@ -30,8 +30,8 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
 
             await CreateDispatcher().DispatchAsync(ExportRequestId);
 
-            // L'id arriva a ProcessExportAsync invariato: e' l'unico dato che il dispatcher
-            // trasporta, e l'export elaborato deve essere quello richiesto.
+            // The id reaches ProcessExportAsync unchanged: it is the only data the dispatcher
+            // carries, and the processed export must be the requested one.
             Assert.Equal(ExportRequestId, capturedId);
         }
 
@@ -44,8 +44,8 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
 
             await dispatcher.DispatchAsync(ExportRequestId, cts.Token);
 
-            // Il token attraversa la delega per reference: e' lo stesso della richiesta HTTP,
-            // quindi un client che disconnette interrompe anche l'export inline.
+            // The token crosses the delegation by reference: it is the HTTP request's own,
+            // so a client that disconnects also stops the inline export.
             Assert.NotNull(_capturedToken);
             Assert.Equal(cts.Token, _capturedToken.Value);
             Assert.True(_capturedToken.Value.CanBeCanceled);
@@ -57,13 +57,13 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
             SetupProcessExportAsync();
             var dispatcher = CreateDispatcher();
 
-            // Chiamata senza token, come la puo' fare un consumer che non ha un contesto di
-            // richiesta da passare.
+            // Call without a token, as a consumer without a request context
+            // to pass might do.
             await dispatcher.DispatchAsync(ExportRequestId);
 
-            // Il default del parametro opzionale arriva al servizio come None, e non come un
-            // token nuovo creato dal dispatcher: e' questo il caso che distingue una delega
-            // vera da una che smette di essere fedele al token ricevuto.
+            // The optional parameter default reaches the service as None, and not as a
+            // new token created by the dispatcher: this is the case that tells a faithful
+            // delegation apart from one that stops honoring the token it received.
             Assert.NotNull(_capturedToken);
             Assert.Equal(CancellationToken.None, _capturedToken.Value);
             Assert.False(_capturedToken.Value.CanBeCanceled);
@@ -75,14 +75,14 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
             SetupProcessExportAsync();
             var dispatcher = CreateDispatcher();
 
-            // Il confronto avviene prima di qualunque await, cosi' l'assert prova l'identita'
-            // dell'istanza e non il valore finale, che sarebbe lo stesso in ogni caso.
+            // The comparison happens before any await, so the assert proves the identity
+            // of the instance and not the final value, which would be the same either way.
             var returned = dispatcher.DispatchAsync(ExportRequestId);
 
-            // Nessun async/await nel dispatcher: la Task restituita e' letteralmente quella di
-            // ProcessExportAsync. Se un domani qui dentro venisse aggiunto un await, il lavoro
-            // non cambierebbe ma il momento di completamento osservabile si: il fallimento di
-            // questo test rende esplicita quella decisione invece di lasciarla implicita.
+            // No async/await in the dispatcher: the returned Task is literally the one from
+            // ProcessExportAsync. If an await were added here one day, the work
+            // would not change but the observable completion moment would: the failure of
+            // this test makes that decision explicit instead of leaving it implicit.
             Assert.NotNull(_returnedTask);
             Assert.Same(_returnedTask, returned);
         }
@@ -94,8 +94,8 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
             SetupProcessExportAsync(_ => throw expected);
             var dispatcher = CreateDispatcher();
 
-            // L'export gira inline, quindi un fallimento deve tornare alla stessa richiesta
-            // che lo ha chiesto: GlobalExceptionHandler la traduce in risposta HTTP.
+            // The export runs inline, so a failure must go back to the same request
+            // that asked for it: GlobalExceptionHandler turns it into an HTTP response.
             var actual = await Assert.ThrowsAsync<InvalidOperationException>(
                 () => dispatcher.DispatchAsync(ExportRequestId));
 
@@ -109,10 +109,10 @@ namespace HealthTrace.Test.BLL.Services.ExportJobDispatcher
             _capturedToken = null;
             _returnedTask = null;
 
-            // Task fresh, gia' completata ma non singleton: Task.CompletedTask e' un'istanza
-            // condivisa, quindi l'identita' passerebbe anche se il dispatcher ne costruisse una
-            // nuova. SetResult e' indispensabile: una TaskCompletionSource resta pending finche'
-            // non viene completata, e un await su di lei bloccherebbe il test per sempre.
+            // A fresh Task, already completed but not a singleton: Task.CompletedTask is a shared
+            // instance, so the identity check would pass even if the dispatcher built a
+            // new one. SetResult is essential: a TaskCompletionSource stays pending until
+            // it is completed, and awaiting it would block the test forever.
             var completion = new TaskCompletionSource();
             completion.SetResult();
             var processing = completion.Task;

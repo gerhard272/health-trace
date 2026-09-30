@@ -4,7 +4,7 @@ using HealthTrace.BLL.Models;
 namespace HealthTrace.BLL.Validations
 {
     /// <summary>
-    /// Questa classe valida il modello RegisterModel utilizzando FluentValidation. Contiene regole per i campi
+    /// Validates RegisterModel using FluentValidation. Contains the rules for the fields
     /// </summary>
     public class RegisterModelValidator : AbstractValidator<RegisterModel>
     {

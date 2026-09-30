@@ -5,8 +5,8 @@ import { environment } from '../../environments/environment';
 
 import { ExportRequest, ExportRequestCreate } from '../models/export.models';
 
-//chiamate a /api/exports: la richiesta risponde subito 202, il PDF viene generato
-//in background dalla Azure Function e si scarica quando lo stato è Completed
+//calls to /api/exports: the request returns 202 immediately, the PDF is generated
+//in the background by the Azure Function and can be downloaded once Completed
 @Injectable({ providedIn: 'root' })
 export class ExportService {
   private readonly apiUrl = environment.apiUrl + '/api/exports';
@@ -25,14 +25,14 @@ export class ExportService {
     return this.http.get<ExportRequest>(`${this.apiUrl}/${id}`).pipe(map(withUtcCreatedAt));
   }
 
-  //il file passa dall'API (non da un URL diretto al Blob), quindi serve l'header Basic Auth
+  //the file goes through the API (not a direct Blob URL), so the Basic Auth header is needed
   download(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/download`, { responseType: 'blob' });
   }
 }
 
-//createdAt è salvato in UTC, ma quando torna dal database arriva senza "Z":
-//senza correzione il browser lo leggerebbe come ora locale, sfasata del fuso orario
+//createdAt is stored in UTC but comes back from the database without "Z":
+//without this fix the browser would read it as local time, shifted by the time zone offset
 function withUtcCreatedAt(request: ExportRequest): ExportRequest {
   const hasTimeZone = /(Z|[+-]\d{2}:\d{2})$/.test(request.createdAt);
   return hasTimeZone ? request : { ...request, createdAt: request.createdAt + 'Z' };

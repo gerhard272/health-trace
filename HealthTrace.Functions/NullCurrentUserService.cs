@@ -2,8 +2,8 @@
 
 namespace HealthTrace.Functions;
 
-// La Function non ha HttpContext: nessun utente autenticato nel senso della richiesta web.
-// L'audit (CreatedBy/ModifiedBy) risultera' 0 ("sistema") per le scritture fatte da qui.
+// The Function has no HttpContext, so there is no authenticated user.
+// Audit fields (CreatedBy/ModifiedBy) are 0 ("system") for writes made from here.
 public class NullCurrentUserService : ICurrentUserService
 {
     public int? UserId => null;

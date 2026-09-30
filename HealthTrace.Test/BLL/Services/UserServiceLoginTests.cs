@@ -13,8 +13,8 @@ using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
-    /// Classe di test per la classe UserService, focalizzata sul metodo LoginAsync
-    /// (entrambi gli overload: username/password e LoginModel).
+    /// Test class for UserService, focused on the LoginAsync method
+    /// (both overloads: username/password and LoginModel).
     /// </summary>
     public class UserServiceLoginTests
     {
@@ -62,8 +62,8 @@ namespace HealthTrace.Test.BLL.Services
             var ex = await Assert.ThrowsAsync<AppValidationException>(
                 () => service.LoginAsync(username!, password!));
 
-            // Credenziali mancanti: l'errore non è su un campo specifico, quindi
-            // UserService lo colloca sotto la chiave di fallback "general".
+            // Missing credentials: the error is not about a specific field, so
+            // UserService puts it under the "general" fallback key.
             Assert.Equal("Username and password are required", Assert.Single(ex.Errors["general"]));
 
             _repository.Verify(r => r.FindAsync(
@@ -80,11 +80,11 @@ namespace HealthTrace.Test.BLL.Services
             var ex = await Assert.ThrowsAsync<UnauthorizedException>(
                 () => service.LoginAsync(Username, PlainPassword));
 
-            // UnauthorizedException non ha un dizionario di errori: il messaggio
-            // contrattuale è il contenuto dell'eccezione, che finisce in Detail.
+            // UnauthorizedException has no error dictionary: the contract
+            // message is the exception content, which ends up in Detail.
             Assert.Equal("Invalid username or password", ex.Message);
 
-            // Nessun utente trovato: VerifyPassword non deve nemmeno essere chiamato.
+            // No user found: VerifyPassword must not even be called.
             _passwordHasher.Verify(h => h.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
@@ -99,7 +99,7 @@ namespace HealthTrace.Test.BLL.Services
             var ex = await Assert.ThrowsAsync<UnauthorizedException>(
                 () => service.LoginAsync(Username, PlainPassword));
 
-            // Stesso messaggio del caso "utente non trovato": non deve rivelare quale dei due è sbagliato.
+            // Same message as the "user not found" case: it must not reveal which of the two is wrong.
             Assert.Equal("Invalid username or password", ex.Message);
 
             _passwordHasher.Verify(h => h.VerifyPassword(HashedPassword, PlainPassword), Times.Once);
@@ -120,7 +120,7 @@ namespace HealthTrace.Test.BLL.Services
             Assert.Equal(Username, result.Username);
 
             _passwordHasher.Verify(h => h.VerifyPassword(HashedPassword, PlainPassword), Times.Once);
-            // Il login non deve mai ri-hashare la password.
+            // Login must never re-hash the password.
             _passwordHasher.Verify(h => h.HashPassword(It.IsAny<string>()), Times.Never);
         }
 
@@ -146,7 +146,7 @@ namespace HealthTrace.Test.BLL.Services
 
             Assert.Equal(cts.Token, findToken);
 
-            // Il login è in sola lettura: non deve mai scrivere sul repository.
+            // Login is read-only: it must never write to the repository.
             _repository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -158,8 +158,8 @@ namespace HealthTrace.Test.BLL.Services
         {
             var service = CreateService();
 
-            // L'overload è async, quindi il throw sul model nullo finisce nella Task
-            // restituita: serve ThrowsAsync, non Throws.
+            // The overload is async, so the throw on a null model ends up in the returned
+            // Task: ThrowsAsync is needed, not Throws.
             var ex = await Assert.ThrowsAsync<AppValidationException>(
                 () => service.LoginAsync((LoginModel)null!));
 

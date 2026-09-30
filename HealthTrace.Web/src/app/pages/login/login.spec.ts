@@ -33,7 +33,7 @@ describe('Login', () => {
     http.expectOne(`${environment.apiUrl}/api/Auth/login`).flush(null, { status: 401, statusText: 'Unauthorized' });
     await fixture.whenStable();
 
-    //l'app è zoneless: il messaggio deve comparire nel DOM, non solo nel componente
+    //the app is zoneless: the message must appear in the DOM, not just in the component
     expect(fixture.nativeElement.textContent).toContain('Username or password is incorrect.');
   });
 

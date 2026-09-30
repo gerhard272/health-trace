@@ -3,10 +3,10 @@
 namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Eccezione per errori di validazione dei dati di input.
-    /// Errors è un dizionario campo → lista di errori, struttura
-    /// compatibile con ValidationProblemDetails (RFC 7807) usato dai controller.
-    /// Nota: in coesistenza con FluentValidation.ValidationException usare il namespace pieno.
+    /// Exception for input data validation errors.
+    /// Errors is a field → error list dictionary, a structure
+    /// compatible with ValidationProblemDetails (RFC 7807) used by the controllers.
+    /// Note: when used alongside FluentValidation.ValidationException, use the fully qualified name.
     /// </summary>
     public class ValidationException : AppException
     {
