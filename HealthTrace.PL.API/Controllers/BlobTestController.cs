@@ -6,7 +6,7 @@ using System.Text;
 
 namespace HealthTrace.PL.API.Controllers
 {
-    [Authorize] // endpoint di test esposti solo agli utenti autenticati
+    [Authorize] // test endpoints exposed to authenticated users only
     [ApiController]
     [Route("api/test/blob")]
     public class BlobTestController : ControllerBase
@@ -21,7 +21,7 @@ namespace HealthTrace.PL.API.Controllers
         [HttpPost("write-test")]
         public async Task<IActionResult> WriteTest(CancellationToken cancellationToken)
         {
-            var content = "Hello from HealthTrace, blob storage funziona!";
+            var content = "Hello from HealthTrace, blob storage works!";
             var bytes = Encoding.UTF8.GetBytes(content);
 
             using var stream = new MemoryStream(bytes);

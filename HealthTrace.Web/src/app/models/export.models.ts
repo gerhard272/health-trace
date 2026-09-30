@@ -1,4 +1,4 @@
-//interfacce per gli export PDF: rispecchiano ExportRequestModel lato API
+//PDF export interfaces: they mirror ExportRequestModel on the API side
 
 export type ExportStatus = 'Pending' | 'Processing' | 'Completed' | 'Failed';
 
@@ -13,8 +13,8 @@ export interface ExportRequest {
   errorMessage?: string | null;
 }
 
-//corpo di POST /api/exports/request: senza campi esporta tutti i sintomi,
-//con symptomIds esporta solo quelli (le date vengono ignorate)
+//body of POST /api/exports/request: with no fields it exports all symptoms,
+//with symptomIds it exports only those (dates are ignored)
 export interface ExportRequestCreate {
   symptomIds?: number[];
   fromDate?: string;

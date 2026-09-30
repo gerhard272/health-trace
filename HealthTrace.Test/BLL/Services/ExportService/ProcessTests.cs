@@ -230,7 +230,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             // Il timestamp viene da DateTime.UtcNow, che non e' iniettabile: qui si
             // verifica il formato, non il valore esatto.
-            Assert.Matches(@"^sintomi-\d{8}-\d{6}\.pdf$", Assert.IsType<string>(entity.FileName));
+            Assert.Matches(@"^symptoms-\d{8}-\d{6}\.pdf$", Assert.IsType<string>(entity.FileName));
         }
 
         [Fact]

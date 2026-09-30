@@ -28,7 +28,7 @@ namespace HealthTrace.Test.PL.API.Controllers
         private const int UserId = 7;
         private const int ExportId = 99;
         private const string ResourceName = "Export";
-        private const string FileName = "sintomi-20260923-120000.pdf";
+        private const string FileName = "symptoms-20260923-120000.pdf";
         private const string PdfContentType = "application/pdf";
 
         private static readonly DateTime FromDate = new(2026, 9, 1);

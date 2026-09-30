@@ -41,7 +41,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
         public async Task GetHistoryAsync_MixedStatuses_MapsFileNameAndErrorMessage()
         {
             var done = ValidEntity(
-                id: 10, status: ExportStatus.Completed, fileName: "sintomi-20260101-101010.pdf");
+                id: 10, status: ExportStatus.Completed, fileName: "symptoms-20260101-101010.pdf");
             var broken = ValidEntity(id: 11, status: ExportStatus.Failed, errorMessage: "blob irraggiungibile");
             SetupExportFindAsync(new[] { done, broken });
             var service = CreateService();
@@ -51,7 +51,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             // Ogni stato espone i propri campi: un export completato mostra il file,
             // uno fallito il motivo. Sono campi diversi, non un fallback unico.
             Assert.Equal(ExportStatus.Completed, result[0].Status);
-            Assert.Equal("sintomi-20260101-101010.pdf", result[0].FileName);
+            Assert.Equal("symptoms-20260101-101010.pdf", result[0].FileName);
             Assert.Null(result[0].ErrorMessage);
             Assert.Equal(ExportStatus.Failed, result[1].Status);
             Assert.Equal("blob irraggiungibile", result[1].ErrorMessage);
@@ -136,7 +136,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var entity = ValidEntity(
                 status: ExportStatus.Completed,
                 blobName: $"{UserId}/abc-123.pdf",
-                fileName: "sintomi-20260101-101010.pdf");
+                fileName: "symptoms-20260101-101010.pdf");
             SetupExportFindAsync(new[] { entity });
             SetupBlobDownload(content);
             var service = CreateService();
@@ -145,7 +145,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             Assert.NotNull(result);
             Assert.Same(content, result!.Content);
-            Assert.Equal("sintomi-20260101-101010.pdf", result.FileName);
+            Assert.Equal("symptoms-20260101-101010.pdf", result.FileName);
             Assert.Equal(PdfContentType, result.ContentType);
 
             // Il container viene dalle options e il blob dal record: nessuno dei due
@@ -209,7 +209,7 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var result = await service.GetFileAsync(UserId, ExportRequestId);
 
             Assert.NotNull(result);
-            Assert.Equal("sintomi.pdf", result!.FileName);
+            Assert.Equal("symptoms.pdf", result!.FileName);
             Assert.Equal(PdfContentType, result.ContentType);
         }
 

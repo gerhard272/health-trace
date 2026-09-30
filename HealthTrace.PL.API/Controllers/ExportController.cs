@@ -33,7 +33,7 @@ namespace HealthTrace.PL.API.Controllers
         ////////////////////////////////////////////////////////////////////////////////////////
 
         // POST: api/exports/request
-        // Richiede un export, risponde 202 con lo stato corrente e il Location del GetById.
+        // Requests an export; returns 202 with the current status and the GetById Location.
 
         [HttpPost("request")]
         [Produces(JsonContentType)]
@@ -46,8 +46,8 @@ namespace HealthTrace.PL.API.Controllers
             [FromBody] ExportRequestCreateModel model,
             CancellationToken cancellationToken)
         {
-            // L'utente si ricava per primo: una richiesta non autenticata deve
-            // ricevere 401 anche se il body contiene un intervallo non valido.
+            // Resolve the user first: an unauthenticated request must get 401
+            // even if the body contains an invalid date range.
             var userId = GetUserId();
 
             if (model.FromDate.HasValue && model.ToDate.HasValue && model.FromDate > model.ToDate)
@@ -56,10 +56,10 @@ namespace HealthTrace.PL.API.Controllers
             var created = await _exportService.RequestExportAsync(userId, model, cancellationToken);
             await _dispatcher.DispatchAsync(created.Id, cancellationToken);
 
-            // La rilettura serve solo a restituire lo stato aggiornato dal dispatcher
-            // (con quello inline l'export può già essere Completed o Failed). La
-            // richiesta è stata comunque registrata: se la rilettura non trova nulla
-            // si risponde con il modello appena creato invece che con un 404.
+            // Re-read only to return the status updated by the dispatcher (with the
+            // inline one the export may already be Completed or Failed). The request
+            // has been stored anyway: if the re-read finds nothing, return the model
+            // just created instead of a 404.
             var current = await _exportService.GetByIdAsync(userId, created.Id, cancellationToken)
                 ?? created;
 
@@ -69,7 +69,7 @@ namespace HealthTrace.PL.API.Controllers
         ////////////////////////////////////////////////////////////////////////////////////////
 
         // GET: api/exports
-        // Cronologia degli export dell'utente autenticato.
+        // Export history of the authenticated user.
 
         [HttpGet]
         [Produces(JsonContentType)]
@@ -87,7 +87,7 @@ namespace HealthTrace.PL.API.Controllers
         ////////////////////////////////////////////////////////////////////////////////////////
 
         // GET: api/exports/5
-        // Stato di un singolo export.
+        // Status of a single export.
 
         [HttpGet("{id:int}")]
         [Produces(JsonContentType)]
@@ -110,7 +110,7 @@ namespace HealthTrace.PL.API.Controllers
         ////////////////////////////////////////////////////////////////////////////////////////
 
         // GET: api/exports/5/download
-        // Scarica il PDF di un export completato; 409 finché non è pronto o se è fallito.
+        // Downloads the PDF of a completed export; 409 while not ready or if it failed.
 
         [HttpGet("{id:int}/download")]
         [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, PdfContentType)]
@@ -142,8 +142,8 @@ namespace HealthTrace.PL.API.Controllers
 
         ////////////////////////////////////////////////////////////////////////////////////////
 
-        // Estrae l'id dell'utente autenticato; se il claim manca il gestore
-        // globale risponde 401 senza ripetere il controllo in ogni action.
+        // Gets the authenticated user id; if the claim is missing the global
+        // handler returns 401 without repeating the check in every action.
         private int GetUserId() => _currentUserService.UserId
             ?? throw new UnauthorizedException();
     }

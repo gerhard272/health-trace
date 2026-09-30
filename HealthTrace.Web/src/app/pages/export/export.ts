@@ -12,10 +12,10 @@ import { getErrorMessage, readBlobProblem } from '../../utils/http-error';
 
 type ExportScope = 'all' | 'range' | 'selection';
 
-//l'export è asincrono: la richiesta risponde subito, poi si interroga lo stato finché
-//la Function non ha generato il PDF (Completed) o non è fallita (Failed)
+//exports are asynchronous: the request returns immediately, then the status is polled until
+//the Function has generated the PDF (Completed) or has failed (Failed)
 const POLL_INTERVAL_MS = 2000;
-const MAX_POLLS = 60; //circa due minuti, poi si aggiorna a mano con "Refresh"
+const MAX_POLLS = 60; //about two minutes, then the user refreshes manually with "Refresh"
 
 @Component({
   imports: [ReactiveFormsModule, DatePipe],
@@ -39,7 +39,7 @@ export class Export {
   historyError = signal<string | null>(null);
   downloadError = signal<string | null>(null);
 
-  private readonly polled = new Set<number>(); //export già seguiti, per non duplicare il polling
+  private readonly polled = new Set<number>(); //exports already being polled, to avoid duplicate polling
 
   constructor(
     private formBuilder: FormBuilder,
@@ -81,7 +81,7 @@ export class Export {
       next: (history) => {
         this.history.set(history);
         this.loadingHistory.set(false);
-        //riprende a seguire gli export ancora in lavorazione (es. dopo un refresh della pagina)
+        //resume polling exports still in progress (e.g. after a page refresh)
         history.filter((item) => !isFinal(item.status)).forEach((item) => this.poll(item.id));
       },
       error: (error: HttpErrorResponse) => {
@@ -147,7 +147,7 @@ export class Export {
       },
       error: async (error: HttpErrorResponse) => {
         this.downloadingId.set(null);
-        //con responseType 'blob' il ProblemDetails arriva come Blob da rileggere
+        //with responseType 'blob' the ProblemDetails arrives as a Blob and must be read back
         const problem = await readBlobProblem(error);
         if (error.status === 409) {
           this.downloadError.set(problem?.detail || 'The export is not ready yet.');
@@ -214,7 +214,7 @@ export class Export {
       return { symptomIds: [...this.selectedIds()] };
     }
 
-    return {}; //nessun criterio: l'API esporta tutti i sintomi dell'utente
+    return {}; //no criteria: the API exports all the user's symptoms
   }
 
   private poll(id: number): void {
@@ -224,12 +224,12 @@ export class Export {
     this.polled.add(id);
     timer(POLL_INTERVAL_MS, POLL_INTERVAL_MS).pipe(
       switchMap(() => this.exportService.getById(id)),
-      takeWhile((item) => !isFinal(item.status), true), //include l'ultimo stato, quello finale
+      takeWhile((item) => !isFinal(item.status), true), //include the last (final) status
       take(MAX_POLLS),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: (item) => this.upsert(item),
-      //un errore interrompe solo l'aggiornamento automatico: resta il pulsante "Refresh"
+      //an error only stops the automatic update: the "Refresh" button is still available
       error: () => this.polled.delete(id),
       complete: () => this.polled.delete(id),
     });
@@ -249,7 +249,7 @@ function isFinal(status: ExportStatus): boolean {
   return status === 'Completed' || status === 'Failed';
 }
 
-//"2026-09-01T00:00:00" -> "01/09/2026": solo la parte di data, senza conversioni di fuso
+//"2026-09-01T00:00:00" -> "01/09/2026": date part only, no time zone conversion
 function formatDay(value: string): string {
   const [year, month, day] = value.slice(0, 10).split('-');
   return `${day}/${month}/${year}`;
@@ -261,6 +261,6 @@ function saveFile(blob: Blob, fileName: string): void {
   link.href = url;
   link.download = fileName;
   link.click();
-  //il link temporaneo ha già avviato il download: l'URL si può rilasciare
+  //the temporary link has already started the download: the URL can be released
   setTimeout(() => URL.revokeObjectURL(url));
 }
