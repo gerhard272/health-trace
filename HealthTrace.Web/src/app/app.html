@@ -1,0 +1,22 @@
+<div class="min-h-screen bg-gray-50">
+
+  <!-- navbar visibile solo da autenticati: login e registrazione restano pagine a sé -->
+  @if (authService.currentUser(); as user) {
+    <header class="border-b border-gray-200 bg-white shadow-sm">
+      <nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <a routerLink="/symptoms" class="shrink-0">
+          <img src="/images/healthtrace-logo.png" alt="HealthTrace" class="h-10 w-auto">
+        </a>
+        <a routerLink="/symptoms" routerLinkActive="!border-[#0E7D73] text-[#0E7D73]" class="border-b-2 border-transparent pb-1 text-sm font-medium text-gray-700 hover:text-[#0E7D73]">Symptoms</a>
+        <a routerLink="/export" routerLinkActive="!border-[#0E7D73] text-[#0E7D73]" class="border-b-2 border-transparent pb-1 text-sm font-medium text-gray-700 hover:text-[#0E7D73]">Export</a>
+        <span class="ml-auto text-sm text-gray-600">{{ user.firstName }} {{ user.lastName }}</span>
+        <button type="button" (click)="logout()" class="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100">Logout</button>
+      </nav>
+    </header>
+  }
+
+  <main class="px-4 py-6">
+    <router-outlet />
+  </main>
+
+</div>
