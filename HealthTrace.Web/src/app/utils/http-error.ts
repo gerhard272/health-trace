@@ -1,6 +1,6 @@
-//gli errori dell'API arrivano come ProblemDetails (RFC 7807): title e detail per gli
-//errori generici, errors (campo -> messaggi) per quelli di validazione.
-//Queste funzioni li trasformano in testo da mostrare nei componenti.
+//API errors arrive as ProblemDetails (RFC 7807): title and detail for
+//generic errors, errors (field -> messages) for validation errors.
+//These functions turn them into text to show in the components.
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -20,7 +20,7 @@ export function getErrorMessage(error: HttpErrorResponse, fallback: string): str
   if (error.status === 0) {
     return 'Cannot reach the server. Check your connection and try again.';
   }
-  //il 500 non porta dettagli utili per l'utente: meglio il messaggio del componente
+  //a 500 carries no useful details for the user: the component's message is better
   if (error.status >= 500) {
     return fallback;
   }
@@ -32,7 +32,7 @@ export function getValidationErrors(error: HttpErrorResponse): Record<string, st
   return error.status === 400 ? (getProblem(error)?.errors ?? {}) : {};
 }
 
-//con responseType 'blob' anche il corpo d'errore arriva come Blob: va letto e riconvertito
+//with responseType 'blob' the error body also arrives as a Blob: it must be read and converted back
 export async function readBlobProblem(error: HttpErrorResponse): Promise<ProblemDetails | null> {
   if (!(error.error instanceof Blob)) {
     return getProblem(error);

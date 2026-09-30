@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Diagnostics;
 namespace HealthTrace.PL.API.Handlers
 {
     /// <summary>
-    /// Gestore globale delle eccezioni non intercettate: sceglie status code e body
-    /// tramite IErrorDetailsMapper e scrive la risposta in formato ProblemDetails
-    /// (RFC 9457). Va registrato con AddExceptionHandler e abilitato con
-    /// UseExceptionHandler in un punto della pipeline che copra anche i middleware.
-    /// Le richieste abbandonate dal client non sono errori applicativi: in quel caso
-    /// l'eccezione viene lasciata propagare.
+    /// Global handler for unhandled exceptions: picks status code and body
+    /// through IErrorDetailsMapper and writes the response as ProblemDetails
+    /// (RFC 9457). Register it with AddExceptionHandler and enable it with
+    /// UseExceptionHandler at a point in the pipeline that also covers the middlewares.
+    /// Requests aborted by the client are not application errors: in that case
+    /// the exception is allowed to propagate.
     /// </summary>
     public sealed class GlobalExceptionHandler : IExceptionHandler
     {

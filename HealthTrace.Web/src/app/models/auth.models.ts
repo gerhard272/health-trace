@@ -1,5 +1,5 @@
-//definizione di interfacce per le richieste e risposte di autenticazione e registrazione
-//uso di export per rendere le interfacce disponibili in authservice login e register
+//interfaces for authentication and registration requests and responses
+//exported so they can be used by AuthService and the login and register pages
 
 export interface LoginRequest {
   username: string;

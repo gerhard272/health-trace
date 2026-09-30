@@ -3,12 +3,12 @@ using HealthTrace.BLL.Exceptions;
 namespace HealthTrace.Test.BLL.Exceptions
 {
     /// <summary>
-    /// Copre NotFoundException, l'unica eccezione che conserva anche i dati usati per costruire il
-    /// messaggio: ResourceName e Key alimentano le estensioni del 400/404 restituito dall'handler.
-    /// Nessun mock: tipo senza dipendenze.
-    /// Il messaggio viene composto qui e non nell'handler, quindi e' formato qui che si decide se
-    /// una ricerca senza chiave produce "risorsa non trovata" o un messaggio con una chiave vuota:
-    /// i due casi devono restare distinguibili.
+    /// Covers NotFoundException, the only exception that also keeps the data used to build the
+    /// message: ResourceName and Key feed the extensions of the 404 returned by the handler.
+    /// No mocks: a type without dependencies.
+    /// The message is built here and not in the handler, so this is where it is decided whether
+    /// a lookup without a key produces "resource not found" or a message with an empty key:
+    /// the two cases must stay distinguishable.
     /// </summary>
     public class NotFoundExceptionTests
     {
@@ -27,8 +27,8 @@ namespace HealthTrace.Test.BLL.Exceptions
         [Fact]
         public void WithoutKey_BuildsMessageWithoutKey()
         {
-            // Ricerca per un criterio non identificativo: il messaggio non deve contenere una chiave,
-            // e Key resta null cosi' l'handler omette l'estensione resourceKey.
+            // Lookup by a non-identifying criterion: the message must not contain a key,
+            // and Key stays null so the handler omits the resourceKey extension.
             var exception = new NotFoundException(ResourceName);
 
             Assert.Equal("Symptom not found.", exception.Message);
@@ -39,8 +39,8 @@ namespace HealthTrace.Test.BLL.Exceptions
         [Fact]
         public void WithEmptyKey_BuildsMessageWithEmptyKey()
         {
-            // Chiave presente ma vuota: e' un caso diverso dalla ricerca senza chiave, quindi il
-            // messaggio lo distingue invece di ripetere "not found" come se la chiave mancasse.
+            // Key present but empty: a different case from a lookup without a key, so the
+            // message tells it apart instead of repeating "not found" as if the key were missing.
             var exception = new NotFoundException(ResourceName, string.Empty);
 
             Assert.Equal("Symptom with key '' was not found.", exception.Message);
@@ -62,9 +62,9 @@ namespace HealthTrace.Test.BLL.Exceptions
         [InlineData(typeof(string), "abc")]
         public void Key_IsKeptWithItsOriginalRuntimeType(Type expectedType, object key)
         {
-            // L'eccezione conserva l'oggetto com'e': la conversione a testo spetta all'handler, che la
-            // fa sull'estensione del corpo. Qui si verifica che il tipo non si perda, cosi' l'handler
-            // resta l'unico punto in cui si decide la resa.
+            // The exception keeps the object as it is: converting it to text is the handler's job,
+            // done on the body extension. Here we check that the type is not lost, so the handler
+            // stays the only place where the rendering is decided.
             var exception = new NotFoundException(ResourceName, key);
 
             Assert.IsType(expectedType, exception.Key);

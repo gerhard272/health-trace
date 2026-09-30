@@ -42,7 +42,7 @@ namespace HealthTrace.Test.PL.API.Logging
                 {
                     ["FileLogging:Path"] = _logPath,
                     ["FileLogging:RetainedFileCountLimit"] = "1",
-                    ["BlobStorage:ConnectionString"] = "non-una-connection-string",
+                    ["BlobStorage:ConnectionString"] = "not-a-connection-string",
                     ["ConnectionStrings:HealthTraceDb"] =
                         "Server=localhost;Database=HealthTraceTest;User Id=test;Password=test;TrustServerCertificate=true"
                 };

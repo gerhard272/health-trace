@@ -1,5 +1,5 @@
-//guard delle rotte: le pagine del diario richiedono il login, quelle di login e
-//registrazione non servono a chi è già autenticato
+//route guards: diary pages require login, the login and
+//registration pages are not needed by users who are already authenticated
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
@@ -13,7 +13,7 @@ export const authGuard: CanActivateFn = (_route, state) => {
     return true;
   }
 
-  //returnUrl riporta l'utente alla pagina richiesta dopo il login
+  //returnUrl brings the user back to the requested page after login
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 

@@ -26,10 +26,10 @@ namespace HealthTrace.BLL.Services
 
                     page.Header().Column(col =>
                     {
-                        col.Item().Text("Diario sintomi - HealthTrace")
+                        col.Item().Text("Symptom diary - HealthTrace")
                         .SemiBold()
                         .FontSize(18);
-                        col.Item().Text($"Generato il {generatedAtUtc:dd/MM/yyyy HH:mm} UTC")
+                        col.Item().Text($"Generated on {generatedAtUtc:dd/MM/yyyy HH:mm} UTC")
                         .FontSize(9)
                         .FontColor(Colors.Grey.Darken1);
                     });
@@ -38,7 +38,7 @@ namespace HealthTrace.BLL.Services
                     {
                         if (symptoms.Count == 0)
                         {
-                            content.Text("Nessun sintomo corrisponde ai criteri selezionati.");
+                            content.Text("No symptoms match the selected criteria.");
                             return;
                         }
 
@@ -53,9 +53,9 @@ namespace HealthTrace.BLL.Services
 
                             table.Header(header =>
                             {
-                                header.Cell().Element(HeaderCell).Text("Data").SemiBold();
-                                header.Cell().Element(HeaderCell).Text("Evento").SemiBold();
-                                header.Cell().Element(HeaderCell).Text("Descrizione").SemiBold();
+                                header.Cell().Element(HeaderCell).Text("Date").SemiBold();
+                                header.Cell().Element(HeaderCell).Text("Event").SemiBold();
+                                header.Cell().Element(HeaderCell).Text("Description").SemiBold();
                             });
 
                             foreach (var symptom in symptoms)
@@ -72,9 +72,9 @@ namespace HealthTrace.BLL.Services
 
                     page.Footer().AlignCenter().Text(text =>
                     {
-                        text.Span("Pagina ");
+                        text.Span("Page ");
                         text.CurrentPageNumber();
-                        text.Span(" di ");
+                        text.Span(" of ");
                         text.TotalPages();
                     });
                 });

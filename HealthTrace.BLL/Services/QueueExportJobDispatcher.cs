@@ -9,10 +9,10 @@ public class QueueExportJobDispatcher : IExportJobDispatcher
 
     public QueueExportJobDispatcher(IOptions<BlobStorageOptions> blobOptions)
     {
-        // Il QueueTrigger delle Functions (extension Storage.Queues 5.x) si aspetta
-        // messaggi codificati in Base64 (default "messageEncoding": "base64").
-        // QueueClient invece di default invia testo semplice: senza questa opzione
-        // la Function non riesce a decodificare il messaggio e non lo elabora mai.
+        // The Functions QueueTrigger (Storage.Queues extension 5.x) expects
+        // Base64-encoded messages (default "messageEncoding": "base64").
+        // QueueClient sends plain text by default: without this option the
+        // Function cannot decode the message and never processes it.
         _queueClient = new QueueClient(
             blobOptions.Value.ConnectionString,
             "export-requests",

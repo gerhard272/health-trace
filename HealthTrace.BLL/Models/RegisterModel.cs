@@ -1,7 +1,7 @@
 ﻿namespace HealthTrace.BLL.Models
 {
     /// <summary>
-    /// DTO di input per la registrazione di un nuovo utente.
+    /// Input DTO for registering a new user.
     /// </summary>
     public class RegisterModel : UserBaseModel
     {

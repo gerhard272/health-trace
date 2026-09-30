@@ -2,8 +2,8 @@
 namespace HealthTrace.BLL.Services.Interfaces
 {
     /// <summary>
-    /// Interfaccia creata pensando che in futuro
-    /// potremmo dover gestire una chiave composita
+    /// Interface created in case, in the future,
+    /// we need to handle a composite key
     /// </summary>
     public interface IModelWithId
     {

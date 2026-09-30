@@ -12,10 +12,10 @@ using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 namespace HealthTrace.BLL.Services
 {
     /// <summary>
-    /// Eredita da GenericService&lt;User, UserModel&gt; il CRUD generico e implementa IUserService.
-    /// La creazione di un utente avviene SOLO tramite RegisterAsync (il CRUD ereditato non trasporta l'hash).
-    /// Gli esiti negativi viaggiano come eccezioni: il mapping verso lo status code HTTP e il
-    /// corpo ProblemDetails è compito del mapper, che i servizi non devono conoscere.
+    /// Inherits the generic CRUD from GenericService&lt;User, UserModel&gt; and implements IUserService.
+    /// Users are created ONLY through RegisterAsync (the inherited CRUD does not carry the hash).
+    /// Failures travel as exceptions: mapping them to the HTTP status code and
+    /// ProblemDetails body is the mapper's job, which services must not know about.
     /// </summary>
     public class UserService : GenericService<User, UserModel>, IUserService
     {
@@ -40,13 +40,13 @@ namespace HealthTrace.BLL.Services
         }
 
         /// <summary>
-        /// Validazione via FluentValidation, controlli di unicità (username, CF),
-        /// hashing della password e persistenza via UnitOfWork.
+        /// Validation via FluentValidation, uniqueness checks (username, fiscal code),
+        /// password hashing and persistence via UnitOfWork.
         /// </summary>
         /// <exception cref="AppValidationException">
-        /// Modello non valido, oppure username o codice fiscale già registrati. Gli errori
-        /// di FluentValidation sono raggruppati per PropertyName, così il corpo della risposta
-        /// li espone per campo; le regole senza PropertyName finiscono sotto "general".
+        /// Invalid model, or username or fiscal code already registered. FluentValidation
+        /// errors are grouped by PropertyName, so the response body exposes them
+        /// per field; rules without a PropertyName end up under "general".
         /// </exception>
         public async Task<UserModel> RegisterAsync(
             RegisterModel model,
@@ -74,11 +74,11 @@ namespace HealthTrace.BLL.Services
         }
 
         /// <summary>
-        /// Verifica le credenziali e restituisce il profilo utente se valide.
-        /// FirstOrDefault è sicuro perché l'unicità dello username è garantita in fase di registrazione.
+        /// Checks the credentials and returns the user profile if they are valid.
+        /// FirstOrDefault is safe because username uniqueness is enforced at registration.
         /// </summary>
-        /// <exception cref="AppValidationException">Username o password mancanti.</exception>
-        /// <exception cref="UnauthorizedException">Credenziali non valide.</exception>
+        /// <exception cref="AppValidationException">Missing username or password.</exception>
+        /// <exception cref="UnauthorizedException">Invalid credentials.</exception>
         public async Task<UserModel> LoginAsync(
             string username,
             string password,
@@ -98,8 +98,8 @@ namespace HealthTrace.BLL.Services
         }
 
         /// <summary>
-        /// Questo overload consente di passare direttamente un LoginModel
-        /// invece di username e password separati.
+        /// This overload allows passing a LoginModel directly
+        /// instead of separate username and password.
         /// </summary>
         public async Task<UserModel> LoginAsync(
             LoginModel model,
@@ -112,8 +112,8 @@ namespace HealthTrace.BLL.Services
         }
 
         /// <summary>
-        /// Raggruppa gli errori di FluentValidation per campo, con la chiave "general"
-        /// per le regole che non hanno una PropertyName (ad esempio quelle a livello di oggetto).
+        /// Groups FluentValidation errors by field, using the "general" key
+        /// for rules without a PropertyName (e.g. object-level rules).
         /// </summary>
         private static Dictionary<string, string[]> ToErrorDictionary(
             IEnumerable<ValidationFailure> failures)

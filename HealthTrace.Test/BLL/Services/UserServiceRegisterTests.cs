@@ -13,10 +13,10 @@ using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
-    /// Class di test per la classe UserService, focalizzata sul metodo RegisterAsync.
-    /// Collegata al file UserService.cs nella cartella BLL/Services.
-    /// Gli esiti negativi non si asseriscono più sul valore di ritorno: RegisterAsync
-    /// lancia ValidationException, quindi i test verificano tipo e contenuto dell'eccezione.
+    /// Test class for UserService, focused on the RegisterAsync method.
+    /// Linked to UserService.cs in the BLL/Services folder.
+    /// Failures are no longer asserted on the return value: RegisterAsync
+    /// throws ValidationException, so the tests check the exception type and content.
     /// </summary>
     public class UserServiceRegisterTests
     {
@@ -88,8 +88,8 @@ namespace HealthTrace.Test.BLL.Services
             SetupValidator(false, "Username is required", "CF not valid");
             var service = CreateService();
 
-            // SetupValidator usa PropertyName vuota, quindi gli errori finiscono sotto
-            // la chiave di fallback "general": è il ramo che deve coprire.
+            // SetupValidator uses an empty PropertyName, so the errors end up under
+            // the "general" fallback key: this is the branch it has to cover.
             var ex = await Assert.ThrowsAsync<AppValidationException>(
                 () => service.RegisterAsync(ValidModel()));
 
@@ -112,8 +112,8 @@ namespace HealthTrace.Test.BLL.Services
             var ex = await Assert.ThrowsAsync<AppValidationException>(
                 () => service.RegisterAsync(ValidModel()));
 
-            // Username e codice fiscale non hanno un campo proprio: l'unicità è un
-            // errore sul modulo intero, quindi sotto "general".
+            // Username and fiscal code have no field of their own: uniqueness is an
+            // error on the whole form, hence under "general".
             Assert.Equal("Username already in use", Assert.Single(ex.Errors["general"]));
             Assert.Equal(1, _findCallCount);
 

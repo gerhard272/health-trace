@@ -16,15 +16,15 @@ import { SymptomService } from '../../services/symptom.service';
 import { SymptomRequest } from '../../models/symptom.models';
 import { getErrorMessage, getValidationErrors } from '../../utils/http-error';
 
-//l'API non valida i sintomi con FluentValidation: questi controlli sono l'unico filtro
-//prima del database (EventName obbligatorio, max 100; Description max 500)
+//the API does not validate symptoms with FluentValidation: these checks are the only filter
+//before the database (EventName required, max 100; Description max 500)
 const notBlankValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null =>
   typeof control.value === 'string' && control.value.trim().length === 0 ? { blank: true } : null;
 
 const validDateValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null =>
   control.value && Number.isNaN(Date.parse(control.value)) ? { invalidDate: true } : null;
 
-//form unico per inserimento (symptoms/new) e modifica (symptoms/:id/edit)
+//single form for create (symptoms/new) and edit (symptoms/:id/edit)
 @Component({
   imports: [ReactiveFormsModule, RouterLink, KeyValuePipe],
   selector: 'app-symptom-form',
@@ -74,7 +74,7 @@ export class SymptomForm {
         this.symptomForm.patchValue({
           eventName: symptom.eventName,
           description: symptom.description ?? '',
-          eventDate: symptom.eventDate.slice(0, 16), //formato di <input type="datetime-local">
+          eventDate: symptom.eventDate.slice(0, 16), //format of <input type="datetime-local">
         });
         this.loading.set(false);
       },
@@ -106,7 +106,7 @@ export class SymptomForm {
 
     this.submitting.set(true);
     const editId = this.editId;
-    //entrambe le strade restituiscono l'id del sintomo salvato, per aprirne il dettaglio
+    //both paths return the id of the saved symptom, to open its details
     const save$: Observable<number> = editId === null
       ? this.symptomService.create(request).pipe(map((created) => created.id))
       : this.symptomService.update(editId, request).pipe(map(() => editId));
@@ -134,7 +134,7 @@ export class SymptomForm {
   }
 }
 
-//data locale nel formato yyyy-MM-ddTHH:mm richiesto da <input type="datetime-local">
+//local date in the yyyy-MM-ddTHH:mm format required by <input type="datetime-local">
 function toDateTimeLocal(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;

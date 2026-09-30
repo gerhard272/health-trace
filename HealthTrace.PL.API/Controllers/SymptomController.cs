@@ -10,7 +10,7 @@ namespace HealthTrace.PL.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    [Authorize] // protezione sulle auth
+    [Authorize] // requires authentication
     public class SymptomController : ControllerBase
     {
         private readonly ISymptomService _service;
@@ -47,9 +47,9 @@ namespace HealthTrace.PL.API.Controllers
 
         // GET: api/symptom
         // GET: api/symptom?date=2026-09-23
-        // GET: api/symptom?name=febbre
-        // Endpoint unico per la collezione: lista completa oppure filtro per data o per nome.
-        // I due filtri sono mutuamente esclusivi (finche' non esiste una ricerca combinata nel service).
+        // GET: api/symptom?name=fever
+        // Single endpoint for the collection: full list or filter by date or by name.
+        // The two filters are mutually exclusive (until the service supports a combined search).
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -79,8 +79,8 @@ namespace HealthTrace.PL.API.Controllers
         ////////////////////////////////////////////////////////////////////////////////////////
 
         // POST: api/symptom
-        // L'UserId viene imposto dal service partendo dall'utente autenticato:
-        // eventuali valori inviati nel body vengono ignorati.
+        // The UserId is set by the service from the authenticated user:
+        // any value sent in the body is ignored.
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -112,7 +112,7 @@ namespace HealthTrace.PL.API.Controllers
         {
             var userId = GetUserId();
 
-            // Controllo di coerenza: l'id nella rotta deve coincidere con quello nel body
+            // Consistency check: the id in the route must match the one in the body
             if (id != symptom.Id)
                 throw new BadRequestException("The id in the route does not match the id in the request body.");
 
@@ -146,8 +146,8 @@ namespace HealthTrace.PL.API.Controllers
 
         ////////////////////////////////////////////////////////////////////////////////////////
 
-        // Estrae l'id dell'utente autenticato; se il claim manca il gestore
-        // globale risponde 401 senza ripetere il controllo in ogni action.
+        // Gets the authenticated user id; if the claim is missing the global
+        // handler returns 401 without repeating the check in every action.
         private int GetUserId() => _currentUserService.UserId
             ?? throw new UnauthorizedException();
     }

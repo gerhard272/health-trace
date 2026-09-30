@@ -2,8 +2,8 @@
 
 namespace HealthTrace.BLL.Services
 {
-    // Implementazione temporanea: elabora l'export nella stessa richiesta HTTP.
-    // Verra' sostituita da un QueueExportJobDispatcher quando arrivera' la Azure Function.
+    // Synchronous alternative to QueueExportJobDispatcher: processes the export within
+    // the same HTTP request. Useful for local runs without the Azure Function.
     public class InlineExportJobDispatcher : IExportJobDispatcher
     {
         private readonly IExportService _exportService;

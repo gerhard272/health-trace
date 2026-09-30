@@ -40,15 +40,15 @@ namespace HealthTrace.DAL.Data
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.Property(s => s.EventDate).IsRequired();
 
-                entity.HasIndex(s => s.UserId); //questo ottimizza la ricerca per UserId
+                entity.HasIndex(s => s.UserId); //speeds up lookups by UserId
 
                 entity.HasOne<User>()
                     .WithMany()
                     .HasForeignKey(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Soft delete: i sintomi cancellati (IsDeleted = true) sono esclusi
-                // automaticamente da tutte le query, come per ExportRequest.
+                // Soft delete: deleted symptoms (IsDeleted = true) are automatically
+                // excluded from every query, as for ExportRequest.
                 entity.HasQueryFilter(s => !s.IsDeleted);
             });
 

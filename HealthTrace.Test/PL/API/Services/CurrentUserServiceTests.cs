@@ -6,11 +6,11 @@ using System.Security.Claims;
 namespace HealthTrace.Test.PL.API.Services
 {
     /// <summary>
-    /// Copre CurrentUserService, che espone l'id dell'utente autenticato letto da un solo claim.
-    /// Il claim e' quello creato da BasicAuthenticationHandler, quindi in produzione il valore e'
-    /// sempre un intero valido: i casi di parsing fallito sono characterization test e servono a
-    /// documentare che, se il claim arrivasse corrotto, l'eccezione non e' un'AppException e
-    /// quindi risponderebbe 500 invece del 401 che i controller ottengono dal valore nullo.
+    /// Covers CurrentUserService, which exposes the authenticated user's id read from a single claim.
+    /// The claim is the one created by BasicAuthenticationHandler, so in production the value is
+    /// always a valid integer: the failed-parsing cases are characterization tests that
+    /// document that, if the claim arrived corrupted, the exception is not an AppException and
+    /// would therefore return 500 instead of the 401 controllers get from the null value.
     /// </summary>
     public class CurrentUserServiceTests
     {
@@ -26,8 +26,8 @@ namespace HealthTrace.Test.PL.API.Services
         [InlineData("2147483647", 2147483647)]
         public void UserId_WithParsableNameIdentifierClaim_ReturnsTheParsedId(string claimValue, int expected)
         {
-            // Il parsing usa int.Parse con gli stili di default: spazi attorno e segno iniziale
-            // sono accettati, il resto del formato e' quello di un intero.
+            // Parsing uses int.Parse with the default styles: surrounding whitespace and a leading sign
+            // are accepted, the rest of the format is that of an integer.
             var service = ServiceFor(ContextWith(new Claim(UserIdClaim, claimValue)));
 
             Assert.Equal(expected, service.UserId);
@@ -36,8 +36,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithoutHttpContext_ReturnsNull()
         {
-            // Nessun HttpContext: la catena di accesso si ferma subito. E' il caso dei worker e dei
-            // job, dove l'utente non esiste; i controller lo trasformano in 401.
+            // No HttpContext: the access chain stops immediately. This is the case of workers and
+            // jobs, where there is no user; controllers turn it into 401.
             var service = ServiceFor(httpContext: null);
 
             Assert.Null(service.UserId);
@@ -46,8 +46,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithNullUser_ReturnsNull()
         {
-            // User e' dichiarata non-nullable su DefaultHttpContext, quindi questo ramo e' vivo solo
-            // se qualcuno imposta esplicitamente un principal nullo: il test lo fa per coprirlo.
+            // User is declared non-nullable on DefaultHttpContext, so this branch is only reachable
+            // if someone explicitly sets a null principal: the test does so to cover it.
             var context = new DefaultHttpContext { User = null! };
 
             var service = ServiceFor(context);
@@ -58,8 +58,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithoutNameIdentifierClaim_ReturnsNull()
         {
-            // Claim presente ma di altro tipo: l'utente e' autenticato ma non identificabile, e la
-            // richiesta viene respinta come non autorizzata invece che fallire internamente.
+            // Claim present but of another type: the user is authenticated but not identifiable, and the
+            // request is rejected as unauthorized instead of failing internally.
             var service = ServiceFor(ContextWith(new Claim(ClaimTypes.Name, "marco.rossi")));
 
             Assert.Null(service.UserId);
@@ -68,8 +68,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithOnlySubjectClaim_ReturnsNull()
         {
-            // "sub" e' il nome abbreviato del claim nei token JWT, ma FindFirst confronta il tipo
-            // per intero: il servizio legge solo l'URI esteso. Il test blocca questa dipendenza.
+            // "sub" is the short claim name in JWT tokens, but FindFirst compares the full
+            // type: the service only reads the extended URI. The test pins this dependency.
             var service = ServiceFor(ContextWith(new Claim(SubjectClaim, "42")));
 
             Assert.Null(service.UserId);
@@ -78,8 +78,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithUnauthenticatedIdentity_StillReturnsTheClaimValue()
         {
-            // Il servizio si fida del claim e non controlla IsAuthenticated: se un'identity senza
-            // tipo di autenticazione portasse lo stesso claim, l'id verrebbe comunque accettato.
+            // The service trusts the claim and does not check IsAuthenticated: if an identity without
+            // an authentication type carried the same claim, the id would still be accepted.
             var context = new DefaultHttpContext
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(UserIdClaim, "42")]))
@@ -93,8 +93,8 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_WithMultipleNameIdentifierClaims_ReturnsTheFirst()
         {
-            // Con due claim dello stesso tipo FindFirst restituisce il primo incontrato: il
-            // comportamento che si ottiene e' quello di una lista, quindi l'ordine conta.
+            // With two claims of the same type FindFirst returns the first one found: the
+            // behavior is that of a list, so order matters.
             var service = ServiceFor(ContextWith(
                 new Claim(UserIdClaim, "7"),
                 new Claim(UserIdClaim, "9")));
@@ -109,12 +109,12 @@ namespace HealthTrace.Test.PL.API.Services
         [InlineData("99999999999", typeof(OverflowException))]
         public void UserId_WithUnparsableNameIdentifierClaim_Throws(string claimValue, Type expected)
         {
-            // Comportamento attuale, non desiderato: il valore arriva sempre da user.Id.ToString(),
-            // quindi questi casi non si verificano oggi. Se si verificassero, GlobalExceptionHandler
-            // risponderebbe 500, non 401, perche' l'eccezione non e' un'AppException. Il test serve
-            // a rendere visibile ogni eventuale passaggio a TryParse.
-            // Un valore null non e' fra i casi: lo rifiuta il costruttore di Claim, quindi non
-            // puo' raggiungere il servizio.
+            // Current, not desired, behavior: the value always comes from user.Id.ToString(),
+            // so these cases do not happen today. If they did, GlobalExceptionHandler
+            // would return 500, not 401, because the exception is not an AppException. The test
+            // makes any future switch to TryParse visible.
+            // A null value is not among the cases: the Claim constructor rejects it, so it
+            // cannot reach the service.
             var service = ServiceFor(ContextWith(new Claim(UserIdClaim, claimValue)));
 
             Assert.Throws(expected, () => service.UserId);
@@ -123,9 +123,9 @@ namespace HealthTrace.Test.PL.API.Services
         [Fact]
         public void UserId_IsReadOnEveryAccess()
         {
-            // Nessun caching: la property rilegge il contesto a ogni accesso, quindi un cambio di
-            // principal nello stesso contesto si riflette subito. E' cio' che permette al
-            // DbContext di registrare l'utente corretto al momento del salvataggio.
+            // No caching: the property re-reads the context on every access, so a change of
+            // principal in the same context is reflected immediately. This is what lets the
+            // DbContext record the correct user at save time.
             var context = ContextWith(new Claim(UserIdClaim, "1"));
             var service = ServiceFor(context);
 

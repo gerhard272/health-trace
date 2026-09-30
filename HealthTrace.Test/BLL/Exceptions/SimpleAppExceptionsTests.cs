@@ -3,12 +3,12 @@ using HealthTrace.BLL.Exceptions;
 namespace HealthTrace.Test.BLL.Exceptions
 {
     /// <summary>
-    /// Copre insieme UnauthorizedException, ConflictException e BadRequestException: condividono lo
-    /// stesso contratto (messaggio di default, messaggio personalizzabile, eccezione interna) e non
-    /// hanno payload oltre al testo, quindi una Theory evita tre classi con tre test identici.
-    /// Nessun mock: sono tipi senza dipendenze.
-    /// I messaggi di default contano piu' di quanto sembrino: arrivano al client nel Detail del corpo
-    /// di risposta, quindi cambiarli cambia il contratto dell'API, non un dettaglio interno.
+    /// Covers UnauthorizedException, ConflictException and BadRequestException together: they share
+    /// the same contract (default message, custom message, inner exception) and have no
+    /// payload beyond the text, so a Theory avoids three classes with three identical tests.
+    /// No mocks: these types have no dependencies.
+    /// Default messages matter more than they seem: they reach the client in the Detail of the
+    /// response body, so changing them changes the API contract, not an internal detail.
     /// </summary>
     public class SimpleAppExceptionsTests
     {
@@ -44,7 +44,7 @@ namespace HealthTrace.Test.BLL.Exceptions
         public void MessageAndInner_AreBothPreserved(Type exceptionType)
         {
             const string custom = "Custom message raised by the test";
-            var inner = new InvalidOperationException("Eccezione interna di test");
+            var inner = new InvalidOperationException("Test inner exception");
 
             var exception = (Exception)Activator.CreateInstance(exceptionType, custom, inner)!;
 

@@ -5,8 +5,8 @@ using System.Text;
 namespace HealthTrace.BLL.Models
 {
     /// <summary>
-    /// DTO di base per le informazioni dell'utente
-    /// classe base per altri modelli di utenti.
+    /// Base DTO for user information,
+    /// base class for the other user models.
     /// </summary>
     public abstract class UserBaseModel
     {

@@ -1,8 +1,8 @@
 ﻿namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Eccezione applicativa per un conflitto sullo stato della risorsa.
-    /// Tradotta dal gestore globale in 409 Conflict.
+    /// Application exception for a conflict on the resource state.
+    /// Translated by the global handler into 409 Conflict.
     /// </summary>
     public class ConflictException : AppException
     {

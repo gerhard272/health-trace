@@ -21,7 +21,7 @@ namespace HealthTrace.DAL.Storage
             CancellationToken cancellationToken = default)
         {
             if (content.Length > _options.MaxFileSizeBytes)
-                //qua va aggiornato in linea con la nuova impl global ex handler
+                // TODO: align with the global exception handler (domain exception)
                 throw new InvalidOperationException($"The file has exceeded the maximum allowed size of {_options.MaxFileSizeBytes} byte.");
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);

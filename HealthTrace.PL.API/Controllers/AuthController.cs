@@ -16,9 +16,9 @@ namespace HealthTrace.PL.API.Controllers
         public AuthController(IUserService userService) => _userService = userService;
 
         /// <summary>
-        /// Registra un nuovo utente. Gli esiti negativi non transitano da qui: il
-        /// servizio lancia l'eccezione applicativa, tradotta in ProblemDetails dal
-        /// gestore globale delle eccezioni.
+        /// Registers a new user. Failures do not go through here: the
+        /// service throws the application exception, which the global exception
+        /// handler translates into ProblemDetails.
         /// </summary>
         [HttpPost("register")]
         [ProducesResponseType(typeof(UserModel), StatusCodes.Status201Created)]
@@ -34,9 +34,9 @@ namespace HealthTrace.PL.API.Controllers
         }
 
         /// <summary>
-        /// Verifica le credenziali e restituisce il profilo utente. Le credenziali non
-        /// valide producono un 401 ProblemDetails tramite UnauthorizedException, senza
-        /// rivelare se è stato l'utente a non esistere o la password a essere sbagliata.
+        /// Checks the credentials and returns the user profile. Invalid credentials
+        /// produce a 401 ProblemDetails through UnauthorizedException, without
+        /// revealing whether the user does not exist or the password is wrong.
         /// </summary>
         [HttpPost("login")]
         [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
