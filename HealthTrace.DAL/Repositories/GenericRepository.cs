@@ -15,9 +15,9 @@ namespace HealthTrace.DAL.Repositories
             _context = context;
             _dbSet = context.Set<T>();
 
-            // Assicura che ogni entità T passata alla repository,
-            // abbia un DbSet registrato in HealthTraceDbContext
-            // Altrimenti genera un errore.
+            // Ensures that every entity T passed to the repository
+            // has a DbSet registered in HealthTraceDbContext,
+            // otherwise it throws.
             EnsureDbSetIsValid();
         }
 

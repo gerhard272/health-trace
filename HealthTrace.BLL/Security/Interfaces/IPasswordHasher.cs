@@ -1,9 +1,9 @@
 ﻿namespace HealthTrace.BLL.Security
 {
     /// <summary>
-    /// Contratto di hashing password (principio di inversione delle dipendenze):
-    /// il BLL dipende da questa astrazione, le implementazioni (es. BCrypt) sono
-    /// intercambiabili senza modificare UserService.
+    /// Password hashing contract (dependency inversion principle):
+    /// the BLL depends on this abstraction, implementations (e.g. BCrypt) are
+    /// interchangeable without changing UserService.
     /// </summary>
     public interface IPasswordHasher
     {

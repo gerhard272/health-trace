@@ -4,29 +4,29 @@ using HealthTrace.BLL.Security;
 namespace HealthTrace.Test.BLL.Security
 {
     /// <summary>
-    /// Test di PasswordHasher, l'unica implementazione di IPasswordHasher: il punto in cui
-    /// l'applicazione produce e verifica i segreti degli utenti.
-    /// Nessun mock, perche' la classe non ha dipendenze e delega a BCrypt: e' anche l'unico punto
-    /// della suite in cui BCrypt viene davvero eseguito, dato che nei test di UserService l'hasher
-    /// e' mockato. I valori usati sono inventati e non plausibili come credenziali reali.
-    /// Attenzione al costo: work factor 11, circa 100 ms per operazione. Non va ridotto per
-    /// velocizzare la suite, altrimenti i test non proteggerebbero l'algoritmo di produzione.
-    /// Attenzione all'ordine degli argomenti: VerifyPassword riceve l'hash prima e la password in
-    /// chiaro dopo, al contrario di BCrypt.Verify(text, hash).
+    /// Tests for PasswordHasher, the only IPasswordHasher implementation: the place where
+    /// the application produces and verifies user secrets.
+    /// No mocks, because the class has no dependencies and delegates to BCrypt: it is also the only place
+    /// in the suite where BCrypt actually runs, since in the UserService tests the hasher
+    /// is mocked. The values used are made up and implausible as real credentials.
+    /// Mind the cost: work factor 11, about 100 ms per operation. Do not lower it to
+    /// speed up the suite, otherwise the tests would not protect the production algorithm.
+    /// Mind the argument order: VerifyPassword takes the hash first and the plain-text
+    /// password second, the opposite of BCrypt.Verify(text, hash).
     /// </summary>
     public class PasswordHasherTests
     {
-        private const string TestPassword = "Password-di-test-1!";
+        private const string TestPassword = "Test-password-1!";
 
         private const string BcryptPrefix = "$2a$";
 
-        // Il fattore di lavoro e' scritto qui per esteso e non letto da BCrypt.DefaultRounds: un
-        // downgrade dell'algoritmo deve rompere la suite, non passare silenziosamente.
+        // The work factor is written out here and not read from BCrypt.DefaultRounds: a
+        // downgrade of the algorithm must break the suite, not pass silently.
         private const int BcryptWorkFactor = 11;
         private const int BcryptHashLength = 60;
 
-        // 72 byte e' il massimo che BCrypt considera: coincide con il PasswordMaxLength del
-        // validator di registrazione, quindi una password al confine arriva al hasher per intero.
+        // 72 bytes is the maximum BCrypt considers: it matches the PasswordMaxLength of the
+        // registration validator, so a password at the boundary reaches the hasher in full.
         private const int BcryptMaxPasswordBytes = 72;
 
         private readonly PasswordHasher _hasher = new();
@@ -36,8 +36,8 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void HashPassword_ReturnsBcryptHashAndNotThePassword()
         {
-            // Il risultato deve essere l'hash bcrypt, non la password: se il fattore di lavoro
-            // scendesse, questo test segnalerebbe che la protezione si e' indebolita.
+            // The result must be the bcrypt hash, not the password: if the work factor
+            // dropped, this test would signal that the protection has weakened.
             var hash = _hasher.HashPassword(TestPassword);
 
             Assert.NotEqual(TestPassword, hash);
@@ -48,9 +48,9 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void HashPassword_TwiceOnTheSamePassword_ReturnsDifferentHashes()
         {
-            // Il sale e' nuovo a ogni chiamata: due utenti con la stessa password non devono avere lo
-            // stesso hash, altrimenti chi legge la tabella puo' capire chi condivide la password.
-            // Entrambi gli hash restano verificabili, perche' il sale viaggia dentro l'hash.
+            // The salt is new on every call: two users with the same password must not have the
+            // same hash, otherwise whoever reads the table can tell who shares a password.
+            // Both hashes stay verifiable, because the salt travels inside the hash.
             var first = _hasher.HashPassword(TestPassword);
             var second = _hasher.HashPassword(TestPassword);
 
@@ -62,9 +62,9 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void HashPassword_ThenVerify_RoundTripAsUserServiceDoes_ReturnsTrue()
         {
-            // Il giro esatto di UserService: RegisterAsync hasha la password del model (riga 68) e
-            // LoginAsync verifica l'hash salvato (riga 94). Se questo giro non torna, la registrazione
-            // produce utenti che non riescono piu' ad autenticarsi.
+            // The exact UserService round trip: RegisterAsync hashes the model's password and
+            // LoginAsync verifies the stored hash. If this round trip breaks, registration
+            // produces users who can no longer authenticate.
             var hash = _hasher.HashPassword(TestPassword);
 
             Assert.True(_hasher.VerifyPassword(hash, TestPassword));
@@ -73,9 +73,9 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void HashPassword_PasswordOf72Bytes_IsHashedAndVerifiable()
         {
-            // Il limite di BCrypt e il limite del validator coincidono, quindi la password piu' lunga
-            // ammessa arriva al hasher per intero. Valore ripetuto, cosi' non e' plausibile come
-            // credenziale reale.
+            // The BCrypt limit and the validator limit match, so the longest allowed password
+            // reaches the hasher in full. Repeated value, so it is not plausible as a
+            // real credential.
             var password = new string('x', BcryptMaxPasswordBytes);
 
             var hash = _hasher.HashPassword(password);
@@ -86,16 +86,16 @@ namespace HealthTrace.Test.BLL.Security
         // --- VerifyPassword ---
 
         [Theory]
-        [InlineData("password-di-test-1!")]   // differenza di maiuscole
-        [InlineData("Password-di-test-1! ")]  // spazio finale
-        [InlineData("Password-di-test-2!")]   // carattere diverso
-        [InlineData("Password-di-test")]      // piu' corta
-        [InlineData("Password-di-test-11!")]  // lunghezza diversa
+        [InlineData("test-password-1!")]   // different case
+        [InlineData("Test-password-1! ")]  // trailing space
+        [InlineData("Test-password-2!")]   // different character
+        [InlineData("Test-password")]      // shorter
+        [InlineData("Test-password-11!")]  // different length
         public void VerifyPassword_PasswordDifferentFromTheHashedOne_ReturnsFalse(string providedPassword)
         {
-            // Nessun falso positivo: una password anche simile non deve mai passare. false e' l'unica
-            // risposta che UserService sa tradurre in 401, quindi un true qui aprirebbe il sessione a
-            // chi ha sbagliato la password.
+            // No false positives: even a similar password must never pass. false is the only
+            // answer UserService can turn into 401, so a true here would open the session to
+            // someone who typed the wrong password.
             var hash = _hasher.HashPassword(TestPassword);
 
             Assert.False(_hasher.VerifyPassword(hash, providedPassword));
@@ -104,10 +104,10 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void VerifyPassword_AcceptsHashCreatedWithADifferentWorkFactor()
         {
-            // Il fattore di lavoro puo' cambiare nel tempo, per esempio perche' l'hardware e' piu'
-            // veloce: gli hash gia' in tabella devono restare verificabili, altrimenti alzare il
-            // fattore lascerebbe fuori tutti gli utenti registrati in precedenza. Qui il fattore
-            // basso serve solo a mantenere il test veloce, non e' quello di produzione.
+            // The work factor may change over time, for example because hardware gets
+            // faster: hashes already in the table must stay verifiable, otherwise raising the
+            // factor would lock out every previously registered user. Here the low
+            // factor only keeps the test fast, it is not the production one.
             var hashWithLowerWorkFactor = BCrypt.Net.BCrypt.HashPassword(TestPassword, 4);
 
             Assert.True(_hasher.VerifyPassword(hashWithLowerWorkFactor, TestPassword));
@@ -116,11 +116,11 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void VerifyPassword_ArgumentsSwapped_ThrowsSaltParseException()
         {
-            // L'ordine del wrapper e' invertito rispetto a BCrypt.Verify(text, hash): passando i due
-            // argomenti al contrario, la password in chiaro viene letta come hash salvato e BCrypt
-            // solleva un'eccezione invece di restituire false. Il test rende esplicita la trappola:
-            // un chiamante che sbaglia l'ordine fallisce subito invece di autenticare l'utente
-            // sbagliato. In UserService la forma corretta e' VerifyPassword(user.PasswordHash, password).
+            // The wrapper's order is the reverse of BCrypt.Verify(text, hash): passing the two
+            // arguments the other way round, the plain-text password is read as the stored hash and BCrypt
+            // throws an exception instead of returning false. The test makes the trap explicit:
+            // a caller who gets the order wrong fails immediately instead of authenticating the
+            // wrong user. In UserService the correct form is VerifyPassword(user.PasswordHash, password).
             var hash = _hasher.HashPassword(TestPassword);
 
             Assert.Throws<SaltParseException>(() => _hasher.VerifyPassword(TestPassword, hash));
@@ -129,11 +129,11 @@ namespace HealthTrace.Test.BLL.Security
         [Fact]
         public void VerifyPassword_StoredHashNotGeneratedByBcrypt_ThrowsSaltParseException()
         {
-            // Un hash salvato che non e' un hash bcrypt (dato corrotto, colonna in chiaro per errore,
-            // formato di una versione diversa) fa lanciare invece di rispondere false. In LoginAsync
-            // questo diventa un errore 500 e non un 401: il comportamento e' documentato qui, ma va
-            // ricordato quando si decide come trattare i dati corrotti.
-            Assert.Throws<SaltParseException>(() => _hasher.VerifyPassword("non-e-un-hash-bcrypt", TestPassword));
+            // A stored hash that is not a bcrypt hash (corrupted data, plain-text column by mistake,
+            // format from a different version) throws instead of returning false. In LoginAsync
+            // this becomes a 500 error and not a 401: the behavior is documented here, but it must be
+            // kept in mind when deciding how to handle corrupted data.
+            Assert.Throws<SaltParseException>(() => _hasher.VerifyPassword("not-a-bcrypt-hash", TestPassword));
         }
     }
 }

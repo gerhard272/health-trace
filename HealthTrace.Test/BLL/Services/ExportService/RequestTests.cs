@@ -6,11 +6,11 @@ using System.Linq.Expressions;
 namespace HealthTrace.Test.BLL.Services.ExportService
 {
     /// <summary>
-    /// Test di RequestExportAsync. Il metodo non legge dal database: costruisce
-    /// l'entita' da zero e la accoda, quindi i test guardano i dati passati ad
-    /// AddAsync, il loro ordine rispetto a SaveChangesAsync e il modello restituito.
-    /// La classe non nomina mai il tipo ExportService: usa solo CreateService(), quindi
-    /// non ha bisogno dell'alias dichiarato in TestBase.cs.
+    /// Tests for RequestExportAsync. The method does not read from the database: it builds
+    /// the entity from scratch and queues it, so the tests look at the data passed to
+    /// AddAsync, its order relative to SaveChangesAsync and the returned model.
+    /// The class never names the ExportService type: it only uses CreateService(), so
+    /// it does not need the alias declared in TestBase.cs.
     /// </summary>
     public class ExportServiceRequestTests : TestBase
     {
@@ -33,9 +33,9 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.RequestExportAsync(UserId, CreateModel());
 
-            // Il coalesce serve perche' Distinct() su una lista nulla va in errore:
-            // senza, l'entita' avrebbe SymptomIds null e LoadSymptomsAsync leggerebbe
-            // .Count su un riferimento nullo quando la coda la processa.
+            // The coalesce is needed because Distinct() on a null list throws:
+            // without it, the entity would have null SymptomIds and LoadSymptomsAsync would read
+            // .Count on a null reference when the queue processes it.
             Assert.NotNull(_addedEntity);
             Assert.Empty(_addedEntity!.SymptomIds);
         }
@@ -48,8 +48,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             await service.RequestExportAsync(
                 OtherUserId, CreateModel(symptomIds: new List<int> { 1 }));
 
-            // UserId arriva dall'argomento e non dal modello: nemmeno un model
-            // costruito a mano puo' accodare un export per un utente diverso.
+            // UserId comes from the argument and not from the model: not even a hand-built
+            // model can queue an export for a different user.
             Assert.NotNull(_addedEntity);
             Assert.Equal(OtherUserId, _addedEntity!.UserId);
             Assert.Equal(ExportStatus.Pending, _addedEntity.Status);
@@ -64,8 +64,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             var result = await service.RequestExportAsync(UserId, CreateModel(fromDate: from, toDate: to));
 
-            // Le date viaggiano grezze, senza normalizzazione a fine giornata: quello
-            // lo fa LoadSymptomsAsync con ToDate.Date.AddDays(1), non questa fase.
+            // Dates travel raw, without end-of-day normalization: that is
+            // done by LoadSymptomsAsync with ToDate.Date.AddDays(1), not in this phase.
             Assert.NotNull(_addedEntity);
             Assert.Equal(from, _addedEntity!.FromDate);
             Assert.Equal(to, _addedEntity.ToDate);
@@ -79,9 +79,9 @@ namespace HealthTrace.Test.BLL.Services.ExportService
             var calls = new List<string>();
             var service = CreateService();
 
-            // I setup vanno DOPO CreateService(), non prima: il factory registra gia'
-            // SaveChangesAsync, e un setup successivo sovrascrive quello precedente,
-            // annullando la callback. In questo ordine la lista si riempie davvero.
+            // The setups go AFTER CreateService(), not before: the factory already registers
+            // SaveChangesAsync, and a later setup overrides the earlier one,
+            // dropping the callback. In this order the list is actually filled.
             _exportRepository
                 .Setup(r => r.AddAsync(It.IsAny<ExportRequest>(), It.IsAny<CancellationToken>()))
                 .Callback<ExportRequest, CancellationToken>((_, _) => calls.Add("AddAsync"))
@@ -93,8 +93,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.RequestExportAsync(UserId, CreateModel());
 
-            // Invertire i due passi salverebbe una richiesta che non e' mai stata
-            // accodata: l'entita' resterebbe in attesa e l'utente non vedrebbe nulla.
+            // Swapping the two steps would save a request that was never
+            // queued: the entity would stay pending and the user would see nothing.
             Assert.Equal(new[] { "AddAsync", "SaveChangesAsync" }, calls);
         }
 
@@ -117,8 +117,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.RequestExportAsync(UserId, CreateModel(), cts.Token);
 
-            // Entrambe ricevono lo stesso token: propagarlo solo ad AddAsync
-            // lascerebbe la scrittura attiva dopo una richiesta di annullamento.
+            // Both receive the same token: propagating it only to AddAsync
+            // would leave the write running after a cancellation request.
             Assert.Equal(cts.Token, addToken);
             Assert.Equal(cts.Token, saveToken);
         }
@@ -133,8 +133,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             Assert.Equal(ExportStatus.Pending, result.Status);
             Assert.Equal(new List<int> { 4, 5 }, result.SymptomIds);
-            // FileName ed ErrorMessage restano null finche' la coda non gira: vengono
-            // valorizzati solo dai rami Completed e Failed di ProcessExportAsync.
+            // FileName and ErrorMessage stay null until the queue runs: they are
+            // set only by the Completed and Failed branches of ProcessExportAsync.
             Assert.Null(result.FileName);
             Assert.Null(result.ErrorMessage);
         }
@@ -146,8 +146,8 @@ namespace HealthTrace.Test.BLL.Services.ExportService
 
             await service.RequestExportAsync(UserId, CreateModel(symptomIds: new List<int> { 1, 2 }));
 
-            // La deduplica dei sintomi e' solo sul model: il service non valida gli id
-            // contro i dati dell'utente, quindi l'accodamento resta una scrittura secca.
+            // Symptom deduplication happens only on the model: the service does not validate the ids
+            // against the user's data, so queuing stays a plain write.
             _exportRepository.Verify(r => r.FindAsync(
                 It.IsAny<Expression<Func<ExportRequest, bool>>>(), It.IsAny<CancellationToken>()),
                 Times.Never);

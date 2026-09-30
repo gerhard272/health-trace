@@ -5,22 +5,22 @@ import { environment } from '../../environments/environment';
 
 import { LoginRequest, RegisterRequest, UserResponse } from '../models/auth.models';
 
-const CREDENTIALS_KEY = 'basicAuthCredentials'; // chiave utilizzata in sessionStorage per l'header Authorization
-const USER_KEY = 'currentUser'; // profilo dell'utente loggato, per mostrarne il nome
+const CREDENTIALS_KEY = 'basicAuthCredentials'; // sessionStorage key for the Authorization header
+const USER_KEY = 'currentUser'; // profile of the logged-in user, to show their name
 
 @Injectable({ providedIn: 'root' })
 
 export class AuthService {
   private readonly apiUrl = environment.apiUrl + '/api/Auth';
 
-  //utente corrente come signal: la navbar si aggiorna da sola a login e logout
+  //current user as a signal: the navbar updates itself on login and logout
   readonly currentUser = signal<UserResponse | null>(readStoredUser());
 
   constructor(private http: HttpClient) { }
 
   login(request: LoginRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(`${this.apiUrl}/login`, request).pipe(tap((user) => {
-      //le credenziali si salvano solo dopo che l'API le ha accettate
+      //credentials are saved only after the API has accepted them
       sessionStorage.setItem(CREDENTIALS_KEY, encodeCredentials(request.username, request.password));
       sessionStorage.setItem(USER_KEY, JSON.stringify(user));
       this.currentUser.set(user);
@@ -47,8 +47,8 @@ export class AuthService {
   }
 }
 
-//btoa accetta solo caratteri Latin-1: si codifica prima in UTF-8, lo stesso encoding con cui
-//BasicAuthenticationHandler decodifica l'header, così funzionano anche password con accenti
+//btoa only accepts Latin-1 characters: encode to UTF-8 first, the same encoding
+//BasicAuthenticationHandler uses to decode the header, so passwords with accents work too
 function encodeCredentials(username: string, password: string): string {
   const bytes = new TextEncoder().encode(`${username}:${password}`);
   let binary = '';

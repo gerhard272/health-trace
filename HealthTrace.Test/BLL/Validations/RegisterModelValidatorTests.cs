@@ -6,15 +6,15 @@ using HealthTrace.BLL.Validations;
 namespace HealthTrace.Test.BLL.Validations
 {
     /// <summary>
-    /// Classe di test per RegisterModelValidator, l'unico validatore FluentValidation
-    /// del BLL. Non servono mock: il validator e' puro, si istanzia e si invoca
-    /// direttamente, quindi ogni assertion riguarda una regola reale.
-    /// Due dettagli del framework guidano le aspettative:
-    /// - cascade Continue (default): una regola che fallisce non cortocircuita le altre
-    ///   sulla stessa proprieta', quindi un campo puo' generare piu' errori;
-    /// - i validatori di lunghezza e Matches sono veri solo su stringhe non nulle, mentre
-    ///   NotEmpty considera vuota anche la stringa composta solo da spazi.
-    /// I test che fissano piu' di un errore documentano il comportamento reale.
+    /// Test class for RegisterModelValidator, the only FluentValidation validator
+    /// in the BLL. No mocks needed: the validator is pure, it is instantiated and invoked
+    /// directly, so every assertion is about a real rule.
+    /// Two framework details drive the expectations:
+    /// - cascade Continue (default): a failing rule does not short-circuit the others
+    ///   on the same property, so a field can produce more than one error;
+    /// - length validators and Matches only apply to non-null strings, while
+    ///   NotEmpty also treats a whitespace-only string as empty.
+    /// Tests that pin more than one error document the actual behavior.
     /// </summary>
     public class RegisterModelValidatorTests
     {
@@ -44,16 +44,16 @@ namespace HealthTrace.Test.BLL.Validations
 
         private static string Repeat(char c, int length) => new(c, length);
 
-        // Isola gli errori di una sola proprieta'. Serve perche' una stessa anomalia
-        // (password o conferma assente) fa fallire piu' regole, e i test vogliono
-        // asserire sul contratto di un campo senza dipendere dagli altri.
+        // Isolates the errors of a single property. Needed because the same anomaly
+        // (missing password or confirmation) fails several rules, and the tests want
+        // to assert on one field's contract without depending on the others.
         private static ValidationFailure[] Errors(ValidationResult result, string property) =>
             result.Errors.Where(e => e.PropertyName == property).ToArray();
 
         private static string[] Messages(IEnumerable<ValidationFailure> errors) =>
             errors.Select(e => e.ErrorMessage).ToArray();
 
-        // --- Percorso felice ---
+        // --- Happy path ---
 
         [Fact]
         public void Validate_ValidModel_ReturnsNoErrors()
@@ -77,8 +77,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // MaximumLength(50) non aggiunge errori: sul null lo salta, sulla stringa
-            // vuota o di spazi la soglia e' rispettata. Resta solo l'obbligatorietà.
+            // MaximumLength(50) adds no errors: it skips null, and an empty or
+            // whitespace string is within the limit. Only the required rule remains.
             var error = Assert.Single(result.Errors);
             Assert.Equal("Username", error.PropertyName);
             Assert.Equal("Username is required", error.ErrorMessage);
@@ -105,7 +105,7 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // La soglia e' inclusa: fallirebbe solo un carattere oltre.
+            // The limit is inclusive: only one more character would fail.
             Assert.Empty(result.Errors);
         }
 
@@ -181,8 +181,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Sul null Length(16) e Matches sono veri per definizione: l'unica regola
-            // che puo' fallire e' NotEmpty, quindi un solo errore.
+            // On null, Length(16) and Matches pass by definition: the only rule
+            // that can fail is NotEmpty, hence a single error.
             var error = Assert.Single(result.Errors);
             Assert.Equal("CF", error.PropertyName);
             Assert.Equal("CF is required", error.ErrorMessage);
@@ -198,9 +198,9 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Diversamente dal null, qui la stringa esiste: NotEmpty la considera
-            // vuota, Length(16) fallisce e la regex non la riconosce. Tre errori
-            // distinti sulla stessa proprieta', nell'ordine di dichiarazione.
+            // Unlike null, here the string exists: NotEmpty considers it
+            // empty, Length(16) fails and the regex does not match it. Three distinct
+            // errors on the same property, in declaration order.
             Assert.Equal(
                 new[] { "CF is required", "CF must be 16 characters", "CF not valid" },
                 Messages(Errors(result, "CF")));
@@ -218,8 +218,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Il formato e' altrimenti corretto: e' la lunghezza a far fallire sia
-            // Length(16) sia la regex, che richiede esattamente 16 caratteri.
+            // The format is otherwise correct: it is the length that fails both
+            // Length(16) and the regex, which requires exactly 16 characters.
             Assert.Equal(
                 new[] { "CF must be 16 characters", "CF not valid" },
                 Messages(Errors(result, "CF")));
@@ -237,9 +237,9 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Tutti i casi sono lunghi 16 caratteri, quindi Length passa e resta solo
-            // la regex: il pattern e' posizionale e case-sensitive, e basta spostare
-            // una cifra al posto di una lettera (o il contrario) per invaliderlo.
+            // All cases are 16 characters long, so Length passes and only
+            // the regex remains: the pattern is positional and case-sensitive, and moving
+            // a digit into a letter's place (or vice versa) is enough to invalidate it.
             var error = Assert.Single(Errors(result, "CF"));
             Assert.Equal("CF not valid", error.ErrorMessage);
         }
@@ -254,9 +254,9 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // MinimumLength(8) salta il null, quindi qui non nasce il duplicato che si
-            // vede sotto: un solo errore. La conferma genera invece un mismatch, ed e'
-            // coperto dai test di PasswordConfirmation.
+            // MinimumLength(8) skips null, so the duplicate seen below does not
+            // appear here: a single error. The confirmation produces a mismatch instead, which is
+            // covered by the PasswordConfirmation tests.
             var error = Assert.Single(Errors(result, "Password"));
             Assert.Equal("The password must be at least 8 characters", error.ErrorMessage);
         }
@@ -271,9 +271,9 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // NotEmpty e MinimumLength(8) dichiarano lo stesso testo, quindi una
-            // password vuota o di soli spazi produce due errori identici: e' il
-            // comportamento attuale del validator, fissato qui come caratterizzazione.
+            // NotEmpty and MinimumLength(8) declare the same text, so an empty or
+            // whitespace-only password produces two identical errors: this is the
+            // current behavior of the validator, pinned here as characterization.
             Assert.Equal(
                 new[] { "The password must be at least 8 characters", "The password must be at least 8 characters" },
                 Messages(Errors(result, "Password")));
@@ -291,7 +291,7 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Non vuota, quindi NotEmpty passa: a fallire e' solo MinimumLength(8).
+            // Not empty, so NotEmpty passes: only MinimumLength(8) fails.
             var error = Assert.Single(Errors(result, "Password"));
             Assert.Equal("The password must be at least 8 characters", error.ErrorMessage);
         }
@@ -305,8 +305,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // 72 e' il tetto di BCrypt: oltre l'hash verrebbe troncato in silenzio,
-            // quindi il validator lo blocca prima, in validazione.
+            // 72 is the BCrypt ceiling: beyond it the hash would be silently truncated,
+            // so the validator blocks it earlier, at validation time.
             var error = Assert.Single(Errors(result, "Password"));
             Assert.Equal("The password must not exceed 72 characters", error.ErrorMessage);
         }
@@ -322,8 +322,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Le due soglie sono incluse: MinimumLength e MaximumLength falliscono
-            // solo se la lunghezza supera il limite, non se lo raggiunge.
+            // Both limits are inclusive: MinimumLength and MaximumLength fail
+            // only when the length goes beyond the limit, not when it reaches it.
             Assert.Empty(result.Errors);
         }
 
@@ -340,8 +340,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // NotEmpty ed Equal falliscono entrambe: la conferma mancante non puo'
-            // coincidere con una password valorizzata, quindi i due errori si sommano.
+            // NotEmpty and Equal both fail: a missing confirmation cannot
+            // match a non-empty password, so the two errors add up.
             Assert.Equal(
                 new[] { "The password confirmation is required", "The passwords do not match" },
                 Messages(Errors(result, "PasswordConfirmation")));
@@ -358,8 +358,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // Equal su stringhe in FluentValidation e' case-sensitive e non normalizza
-            // gli spazi: basta un maiuscolo diverso o uno spazio finale per invalidare.
+            // Equal on strings in FluentValidation is case-sensitive and does not normalize
+            // whitespace: a different upper-case letter or a trailing space is enough to invalidate.
             var error = Assert.Single(Errors(result, "PasswordConfirmation"));
             Assert.Equal("The passwords do not match", error.ErrorMessage);
         }
@@ -374,8 +374,8 @@ namespace HealthTrace.Test.BLL.Validations
 
             var result = _validator.Validate(model);
 
-            // La regola e' Must(d => !d.HasValue || ...): la data e' opzionale e la
-            // sua assenza non e' un errore.
+            // The rule is Must(d => !d.HasValue || ...): the date is optional and
+            // its absence is not an error.
             Assert.Empty(result.Errors);
         }
 
@@ -393,16 +393,16 @@ namespace HealthTrace.Test.BLL.Validations
         [Fact]
         public void Validate_TodayBirthDate_IsAccepted()
         {
-            // La data e' letta subito prima di validare, cosi' la finestra in cui il
-            // test puo' incrociare la mezzanotte e' minima.
+            // The date is read right before validating, so the window in which the
+            // test could cross midnight is minimal.
             var today = DateOnly.FromDateTime(DateTime.Now);
             var model = ValidModel();
             model.BirthDate = today;
 
             var result = _validator.Validate(model);
 
-            // Il confronto e' <=, quindi il giorno corrente e' ammesso: e' il boundary
-            // che distingue <= da <. Se il confronto fosse <, questo test fallirebbe.
+            // The comparison is <=, so today is allowed: this is the boundary
+            // that tells <= apart from <. If the comparison were <, this test would fail.
             Assert.Empty(result.Errors);
         }
 
@@ -421,7 +421,7 @@ namespace HealthTrace.Test.BLL.Validations
             Assert.Equal("BirthDate cannot be in the future", error.ErrorMessage);
         }
 
-        // --- Cascata ---
+        // --- Cascade ---
 
         [Fact]
         public void Validate_AllFieldsInvalid_ReturnsErrorsForEveryProperty()
@@ -441,10 +441,10 @@ namespace HealthTrace.Test.BLL.Validations
 
             Assert.False(result.IsValid);
 
-            // Cascade Continue: nessuna regola cortocircuita le altre, quindi ogni
-            // proprieta' del modello viene raggiunta. La sequenza segue l'ordine di
-            // dichiarazione delle RuleFor; sul CF i due errori (lunghezza e formato)
-            // stanno insieme, perche' l'unica regola superata e' NotEmpty.
+            // Cascade Continue: no rule short-circuits the others, so every
+            // property of the model is reached. The sequence follows the declaration order
+            // of the RuleFor calls; on the CF the two errors (length and format)
+            // come together, because the only rule that passes is NotEmpty.
             Assert.Equal(
                 new[]
                 {

@@ -1,13 +1,13 @@
 ﻿using HealthTrace.BLL.Services.Interfaces;
 
 /// <summary>
-/// DTO di output/CRUD: PasswordHash è volutamente escluso per non esporre dati di autenticazione nelle risposte API;
-/// verrà gestito internamente dai servizi di registrazione/login con un DTO dedicato.
+/// Output/CRUD DTO: PasswordHash is intentionally excluded so authentication data is never exposed in API responses;
+/// it is handled internally by the registration/login services with a dedicated DTO.
 /// </summary>
 namespace HealthTrace.BLL.Models
 {
     /// <summary>
-    /// DTO di output/CRUD per le informazioni dell'utente.
+    /// Output/CRUD DTO for user information.
     /// </summary>
     public class UserModel : UserBaseModel, IModelWithId
     {

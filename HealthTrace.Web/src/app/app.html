@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-50">
 
-  <!-- navbar visibile solo da autenticati: login e registrazione restano pagine a sé -->
+  <!-- navbar visible only to authenticated users: login and registration stay standalone pages -->
   @if (authService.currentUser(); as user) {
     <header class="border-b border-gray-200 bg-white shadow-sm">
       <nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">

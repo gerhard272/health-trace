@@ -21,7 +21,7 @@ namespace HealthTrace.BLL.Services
 
         }
 
-        //metodo per ottenere un sintomo specifico di un utente
+        //gets a specific symptom of a user
         public async Task<SymptomModel?> GetByIdAsync(int userId, int symptomId, CancellationToken cancellationToken = default)
         {
             var entity = await GetOwnedEntityAsync(userId, symptomId, cancellationToken);
@@ -35,16 +35,16 @@ namespace HealthTrace.BLL.Services
             }
         }
 
-        //metodo per ottenere tutti i sintomi di un utente
+        //gets all the symptoms of a user
         public async Task<IReadOnlyList<SymptomModel>> GetAllByUserIdAsync(int userId, CancellationToken cancellationToken = default)
         {
-            //filter con funzione lambda per ottenere tutti i sintomi di un utente specifico
+            //lambda filter to get all the symptoms of a specific user
             var entities = await _symptomRepository.FindAsync(s => s.UserId == userId, cancellationToken);
             return _mapper.Map<IReadOnlyList<SymptomModel>>(entities);
 
         }
 
-        //metodo per creare un nuovo sintomo per un utente
+        //creates a new symptom for a user
         public async Task<SymptomModel> CreateAsync(int userId, SymptomModel model, CancellationToken cancellationToken = default)
         {
             var entity = _mapper.Map<Symptom>(model);
@@ -54,7 +54,7 @@ namespace HealthTrace.BLL.Services
             return _mapper.Map<SymptomModel>(entity);
         }
 
-        //metodo per aggiornare un sintomo esistente di un utente
+        //updates an existing symptom of a user
         public async Task<SymptomModel?> UpdateAsync(int userId, SymptomModel model, CancellationToken cancellationToken = default)
         {
             var entity = await GetOwnedEntityAsync(userId, model.Id, cancellationToken);
@@ -63,15 +63,15 @@ namespace HealthTrace.BLL.Services
                 return null;
             }
             _mapper.Map(model, entity);
-            //come in CreateAsync, il proprietario resta l'utente autenticato: lo UserId del body
-            //viene ignorato (se mancante varrebbe 0, se diverso sposterebbe il sintomo a un altro utente)
+            //as in CreateAsync, the owner stays the authenticated user: the UserId in the body
+            //is ignored (if missing it would be 0, if different it would move the symptom to another user)
             entity.UserId = userId;
             _symptomRepository.Update(entity);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<SymptomModel>(entity);
         }
 
-        //metodo per eliminare un sintomo esistente di un utente
+        //deletes an existing symptom of a user
         public async Task<bool> DeleteAsync(int userId, int symptomId, CancellationToken cancellationToken = default)
         {
             var entity = await GetOwnedEntityAsync(userId, symptomId, cancellationToken);
@@ -84,15 +84,15 @@ namespace HealthTrace.BLL.Services
             return true;
         }
 
-        //metodo per ottenere un sintomo specifico di un utente dalla data
+        //gets the symptoms of a user on a given date
         public async Task<IReadOnlyList<SymptomModel>> GetByDateAsync(int userId, DateTime date, CancellationToken cancellationToken = default)
         {
             var entities = await _symptomRepository.FindAsync(s => s.UserId == userId && s.EventDate.Date == date.Date, cancellationToken);
             return _mapper.Map<IReadOnlyList<SymptomModel>>(entities);
         }
 
-        //metodo per cercare i sintomi di un utente per nome dell'evento: basta una parte del nome
-        //("testa" trova "Mal di testa"); maiuscole/minuscole le ignora la collation del database
+        //searches a user's symptoms by event name: part of the name is enough
+        //("head" finds "Headache"); case is ignored by the database collation
         public async Task<IReadOnlyList<SymptomModel>> GetByNameAsync(int userId, string eventName, CancellationToken cancellationToken = default)
         {
             var term = eventName.Trim();

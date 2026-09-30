@@ -6,7 +6,7 @@ import { SymptomService } from '../../services/symptom.service';
 import { Symptom } from '../../models/symptom.models';
 import { getErrorMessage } from '../../utils/http-error';
 
-//dettaglio di un evento sintomo (GET /api/Symptom/{id}) con modifica ed eliminazione
+//details of a symptom event (GET /api/Symptom/{id}) with edit and delete
 @Component({
   imports: [RouterLink, DatePipe],
   selector: 'app-symptom-detail',
@@ -41,7 +41,7 @@ export class SymptomDetail {
       },
       error: (error: HttpErrorResponse) => {
         this.loading.set(false);
-        //404 anche per i sintomi di un altro utente: l'API non rivela che esistono
+        //404 also for other users' symptoms: the API does not reveal that they exist
         if (error.status === 404) {
           this.notFound.set(true);
         } else {

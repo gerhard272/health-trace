@@ -1,8 +1,8 @@
 using HealthTrace.BLL.Exceptions;
-// Il namespace di questo file replica quello del codice sotto test, quindi la
-// regola di risoluzione dei namespace annidati non trova da sola il mapper: la
-// dichiarazione esplicita serve, come in tutti gli altri punti in cui i due
-// namespace hanno lo stesso nome finale.
+// This file's namespace mirrors that of the code under test, so the
+// nested namespace resolution rule does not find the mapper on its own: the
+// explicit declaration is needed, as everywhere else where the two
+// namespaces share the same last segment.
 using HealthTrace.PL.API.Handlers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,19 +11,19 @@ using AppValidationException = HealthTrace.BLL.Exceptions.ValidationException;
 namespace HealthTrace.Test.PL.API.Handlers
 {
     /// <summary>
-    /// Classe di test per ExceptionStatusMapper, l'unico punto dell'applicazione in cui
-    /// un tipo di eccezione viene tradotto in uno status code HTTP e in un corpo
-    /// ProblemDetails. Non servono mock ne' un host: il mapper e' puro, non ha
-    /// dipendenze e si istanzia direttamente, quindi ogni assertion riguarda un ramo
-    /// reale dello switch.
-    /// I test verificano la traduzione, non il testo delle singole eccezioni: il
-    /// Detail e' sempre il messaggio dell'eccezione ricevuta, costruito dall'eccezione
-    /// stessa, mentre scelta di status, titolo, tipo di problema ed estensioni sono
-    /// responsabilita' del mapper. Per questo i messaggi sono confrontati con
-    /// exception.Message e non scritti per esteso.
-    /// Il ramo 500 e' l'unico che non riceve alcun dettaglio: asserire esplicitamente
-    /// che il Detail resti nullo blocca la divulgazione di informazioni interne, che
-    /// nel doc comment della classe e' indicata come comportamento voluto.
+    /// Test class for ExceptionStatusMapper, the only place in the application where
+    /// an exception type is translated into an HTTP status code and a ProblemDetails
+    /// body. No mocks or host needed: the mapper is pure, has no
+    /// dependencies and is instantiated directly, so every assertion is about a real
+    /// branch of the switch.
+    /// The tests check the translation, not the text of the individual exceptions: the
+    /// Detail is always the message of the received exception, built by the exception
+    /// itself, while the choice of status, title, problem type and extensions is
+    /// the mapper's responsibility. That is why messages are compared with
+    /// exception.Message and not written out.
+    /// The 500 branch is the only one that receives no details: explicitly asserting
+    /// that Detail stays null blocks the disclosure of internal information, which
+    /// the class doc comment describes as the intended behavior.
     /// </summary>
     public class ExceptionStatusMapperTests
     {
@@ -55,15 +55,15 @@ namespace HealthTrace.Test.PL.API.Handlers
 
             var problem = _mapper.Map(new AppValidationException(errors));
 
-            // Tipo concreto diverso da ProblemDetails: e' il segnale che il client usa
-            // per sapere che gli errori sono raggruppati per nome di campo.
+            // A concrete type other than ProblemDetails: it is the signal the client uses
+            // to know that errors are grouped by field name.
             var validation = Assert.IsType<ValidationProblemDetails>(problem);
             Assert.Equal(StatusCodes.Status400BadRequest, validation.Status);
             Assert.Equal(ValidationTitle, validation.Title);
             Assert.Equal("Validation failed.", validation.Detail);
 
-            // Il raggruppamento per campo e' il contenuto di questo ramo: la stessa
-            // chiave conserva piu' messaggi, chiavi diverse restano separate.
+            // Grouping by field is what this branch is about: the same
+            // key keeps several messages, different keys stay separate.
             Assert.Equal(2, validation.Errors.Count);
             Assert.Equal(new[] { "Username already in use" }, validation.Errors["username"]);
             Assert.Equal(
@@ -74,8 +74,8 @@ namespace HealthTrace.Test.PL.API.Handlers
         [Fact]
         public void Map_ValidationException_WithoutFieldErrors_ReturnsEmptyErrorDictionary()
         {
-            // L'eccezione puo' essere lanciata senza alcun errore per campo: il mapper
-            // deve comunque restituire un dizionario vuoto, non un riferimento nullo.
+            // The exception can be thrown without any field error: the mapper
+            // must still return an empty dictionary, not a null reference.
             var problem = _mapper.Map(new AppValidationException());
 
             var validation = Assert.IsType<ValidationProblemDetails>(problem);
@@ -88,8 +88,8 @@ namespace HealthTrace.Test.PL.API.Handlers
         [Fact]
         public void Map_UnauthorizedException_Returns401WithExceptionMessageAsDetail()
         {
-            // Messaggio unico per credenziali inesistenti e credenziali errate: e' una
-            // scelta di sicurezza per non permettere l'enumerazione degli account.
+            // A single message for non-existent and wrong credentials: a
+            // security choice to prevent account enumeration.
             var exception = new UnauthorizedException("Invalid username or password");
 
             var problem = _mapper.Map(exception);
@@ -113,8 +113,8 @@ namespace HealthTrace.Test.PL.API.Handlers
             Assert.Equal(NotFoundTitle, problem.Title);
             Assert.Equal(exception.Message, problem.Detail);
 
-            // Le estensioni sono informazioni che il client non riceveva prima della
-            // traduzione a eccezioni: dicono quale risorsa e con quale chiave si cercava.
+            // The extensions are information the client did not get before the
+            // move to exceptions: they say which resource and which key were looked up.
             Assert.Equal(ResourceName, Assert.IsType<string>(problem.Extensions[ResourceNameExtension]));
             Assert.Equal("99", Assert.IsType<string>(problem.Extensions[ResourceKeyExtension]));
         }
@@ -122,8 +122,8 @@ namespace HealthTrace.Test.PL.API.Handlers
         [Fact]
         public void Map_NotFoundException_WithoutKey_OmitsResourceKeyExtension()
         {
-            // Senza chiave non viene emessa un'estensione vuota: il client deve poter
-            // distinguere "cercata senza chiave" da "cercata con chiave vuota".
+            // Without a key no empty extension is emitted: the client must be able to
+            // tell "looked up without a key" apart from "looked up with an empty key".
             var problem = _mapper.Map(new NotFoundException(ResourceName));
 
             Assert.Equal(StatusCodes.Status404NotFound, problem.Status);
@@ -136,7 +136,7 @@ namespace HealthTrace.Test.PL.API.Handlers
         [InlineData("abc", "abc")]
         public void Map_NotFoundException_ConvertsKeyToText(object key, string expected)
         {
-            // La chiave arriva come object e nel corpo deve viaggiare come testo.
+            // The key arrives as an object and must travel as text in the body.
             var problem = _mapper.Map(new NotFoundException(ResourceName, key));
 
             Assert.Equal(expected, Assert.IsType<string>(problem.Extensions[ResourceKeyExtension]));
@@ -156,14 +156,14 @@ namespace HealthTrace.Test.PL.API.Handlers
             Assert.Equal(exception.Message, problem.Detail);
         }
 
-        // --- Altra AppException ---
+        // --- Other AppException ---
 
         [Fact]
         public void Map_OtherAppException_Returns400WithBadRequestTitle()
         {
-            // BadRequestException deriva da AppException come i tipi precedenti, ma
-            // nessuno dei rami specifici la intercetta: e' la prova che i rami validi
-            // sono valutati prima del ramo generico e non vengono assorbiti da esso.
+            // BadRequestException derives from AppException like the previous types, but
+            // none of the specific branches catches it: this proves the specific branches
+            // are evaluated before the generic one and are not swallowed by it.
             var exception = new BadRequestException("The uploaded file is too large.");
 
             var problem = _mapper.Map(exception);
@@ -174,7 +174,7 @@ namespace HealthTrace.Test.PL.API.Handlers
             Assert.Equal(exception.Message, problem.Detail);
         }
 
-        // --- Eccezione non prevista ---
+        // --- Unexpected exception ---
 
         [Theory]
         [InlineData(typeof(FormatException))]
@@ -183,8 +183,8 @@ namespace HealthTrace.Test.PL.API.Handlers
         [InlineData(typeof(Exception))]
         public void Map_UnexpectedException_Returns500WithoutDetail(Type exceptionType)
         {
-            // Nessuna di queste eccezioni e' nota al mapper, quindi il ramo finale
-            // deve produrre lo stesso 500 per tutte.
+            // None of these exceptions is known to the mapper, so the final branch
+            // must produce the same 500 for all of them.
             var exception = (Exception)Activator.CreateInstance(exceptionType)!;
 
             var problem = _mapper.Map(exception);
@@ -192,8 +192,8 @@ namespace HealthTrace.Test.PL.API.Handlers
             Assert.Equal(StatusCodes.Status500InternalServerError, problem.Status);
             Assert.Equal(InternalServerErrorTitle, problem.Title);
 
-            // Nessun dettaglio esposto: il corpo resta generico e i dettagli restano
-            // nel log, con il traceId come chiave di correlazione.
+            // No details exposed: the body stays generic and the details stay
+            // in the log, with the traceId as correlation key.
             Assert.Null(problem.Detail);
             Assert.Empty(problem.Extensions);
         }

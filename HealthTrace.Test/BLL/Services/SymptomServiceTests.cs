@@ -9,9 +9,9 @@ using Moq;
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
-    /// Class di test per la classe SymptomService, focalizzata sui metodi
+    /// Test class for SymptomService, focused on the methods
     /// GetByIdAsync, GetAllByUserIdAsync, CreateAsync, UpdateAsync,
-    /// DeleteAsync, GetByDateAsync e GetByNameAsync.
+    /// DeleteAsync, GetByDateAsync and GetByNameAsync.
     /// </summary>
     public class SymptomServiceTests
     {
@@ -134,7 +134,7 @@ namespace HealthTrace.Test.BLL.Services
         [Fact]
         public async Task CreateAsync_ForcesUserIdOnPersistedEntity()
         {
-            // Il modello arriva con UserId "sbagliato": il service deve sovrascriverlo.
+            // The model arrives with the "wrong" UserId: the service must overwrite it.
             var model = ValidModel();
             model.UserId = OtherUserId;
 
@@ -227,9 +227,9 @@ namespace HealthTrace.Test.BLL.Services
         [InlineData(OtherUserId)]
         public async Task UpdateAsync_BodyWithDifferentUserId_KeepsAuthenticatedOwner(int bodyUserId)
         {
-            // Il mapper copia anche UserId dal body: 0 se il client non lo invia (violazione
-            // della FK), l'id di un altro utente se lo manipola. Il servizio deve ripristinare
-            // il proprietario autenticato, come fa CreateAsync.
+            // The mapper also copies UserId from the body: 0 if the client does not send it (FK
+            // violation), another user's id if it tampers with it. The service must restore
+            // the authenticated owner, as CreateAsync does.
             var entity = ValidEntity();
             var model = ValidModel();
             model.UserId = bodyUserId;
@@ -355,7 +355,7 @@ namespace HealthTrace.Test.BLL.Services
             var predicate = _capturedPredicate!.Compile();
 
             Assert.True(predicate(new Symptom { UserId = UserId, EventDate = EventDate }));
-            // La normalizzazione .Date deve ignorare l'ora.
+            // The .Date normalization must ignore the time.
             Assert.True(predicate(new Symptom { UserId = UserId, EventDate = EventDate.AddHours(5) }));
             Assert.False(predicate(new Symptom { UserId = UserId, EventDate = EventDate.AddDays(1) }));
             Assert.False(predicate(new Symptom { UserId = OtherUserId, EventDate = EventDate }));
@@ -382,17 +382,17 @@ namespace HealthTrace.Test.BLL.Services
             SetupFindAsync(NoSymptoms);
             var service = CreateService();
 
-            // Ricerca per sottostringa: con il confronto esatto "testa" non trovava
-            // "mal di testa" e il filtro della UI sembrava non funzionare.
-            await service.GetByNameAsync(UserId, "testa");
+            // Substring search: with an exact match "head" did not find
+            // "bad headache" and the UI filter seemed broken.
+            await service.GetByNameAsync(UserId, "head");
 
             Assert.NotNull(_capturedPredicate);
             var predicate = _capturedPredicate!.Compile();
 
-            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "mal di testa" }));
-            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "testa" }));
-            Assert.False(predicate(new Symptom { UserId = UserId, EventName = "tosse" }));
-            Assert.False(predicate(new Symptom { UserId = OtherUserId, EventName = "mal di testa" }));
+            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "bad headache" }));
+            Assert.True(predicate(new Symptom { UserId = UserId, EventName = "head" }));
+            Assert.False(predicate(new Symptom { UserId = UserId, EventName = "cough" }));
+            Assert.False(predicate(new Symptom { UserId = OtherUserId, EventName = "bad headache" }));
         }
 
         [Fact]

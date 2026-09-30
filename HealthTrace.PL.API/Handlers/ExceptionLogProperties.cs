@@ -3,7 +3,7 @@ using HealthTrace.BLL.Exceptions;
 namespace HealthTrace.PL.API.Handlers
 {
     /// <summary>
-    /// Fornisce un metodo per ottenere le proprietà da loggare per un'eccezione specifica.
+    /// Provides a method to get the properties to log for a specific exception.
     /// </summary>
     public static class ExceptionLogProperties
     {

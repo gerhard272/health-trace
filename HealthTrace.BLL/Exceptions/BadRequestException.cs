@@ -1,9 +1,9 @@
 ﻿namespace HealthTrace.BLL.Exceptions
 {
     /// <summary>
-    /// Eccezione per errori applicativi generici che si risolvono in 400 Bad Request.
-    /// È il default del ramo AppException del gestore globale: da usare quando
-    /// nessuno dei tipi più specifici (Validation, Unauthorized, NotFound) è adatto.
+    /// Exception for generic application errors that result in 400 Bad Request.
+    /// It is the default of the AppException branch in the global handler: use it when
+    /// none of the more specific types (Validation, Unauthorized, NotFound) fits.
     /// </summary>
     public class BadRequestException : AppException
     {

@@ -7,19 +7,19 @@ using Moq;
 namespace HealthTrace.Test.BLL.Services
 {
     /// <summary>
-    /// Test di GenericService&lt;TEntity, TModel&gt;, la base generica da cui eredita
-    /// UserService. Il CRUD che eredita era privo di copertura: i test esistenti
-    /// riguardano solo RegisterAsync e LoginAsync, cioe' i metodi aggiunti dalla classe
-    /// derivata, mai i cinque ereditati.
-    /// I test corrono su tipi fittizi con IMapper mockato: nessun DbContext, nessun
-    /// profilo di mapping reale, nessuna dipendenza dallo stato dell'applicazione, e
-    /// quindi la suite resta eseguibile in qualunque momento.
-    /// Nota sui due tipi locali: sono public perche' Castle DynamicProxy genera i
-    /// proxy in un assembly dinamico, che non puo' riferire tipi annidati non pubblici.
-    /// Con private o internal il fallimento sarebbe un TypeLoadException senza alcun
-    /// rapporto con la logica sotto test.
-    /// Nota sulle quattro firme di IMapper: vanno registrate separatamente, ognuna
-    /// con il proprio argomento generico, altrimenti i setup si sovrascrivono a vicenda.
+    /// Tests for GenericService&lt;TEntity, TModel&gt;, the generic base that
+    /// UserService inherits from. The inherited CRUD had no coverage: the existing tests
+    /// only cover RegisterAsync and LoginAsync, i.e. the methods added by the derived
+    /// class, never the five inherited ones.
+    /// The tests run on fake types with a mocked IMapper: no DbContext, no
+    /// real mapping profile, no dependency on application state, and
+    /// so the suite can always be run.
+    /// Note on the two local types: they are public because Castle DynamicProxy generates
+    /// proxies in a dynamic assembly, which cannot reference non-public nested types.
+    /// With private or internal the failure would be a TypeLoadException unrelated
+    /// to the logic under test.
+    /// Note on the four IMapper signatures: they must be set up separately, each
+    /// with its own generic argument, otherwise the setups override each other.
     /// </summary>
     public class GenericServiceTests
     {
@@ -44,24 +44,24 @@ namespace HealthTrace.Test.BLL.Services
 
         private GenericService<TestEntity, TestModel> CreateService()
         {
-            // Il repository non e' iniettato: viene risolto dal UnitOfWork dentro il
-            // costruttore. Per questo CreateService() va SEMPRE chiamato per primo e i
-            // setup che servono al test vanno messi DOPO, altrimenti vengono scartati.
+            // The repository is not injected: it is resolved from the UnitOfWork inside the
+            // constructor. That is why CreateService() must ALWAYS be called first and the
+            // setups the test needs go AFTER it, otherwise they are discarded.
             _unitOfWork.Setup(u => u.Repository<TestEntity>()).Returns(_repository.Object);
             _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             return new GenericService<TestEntity, TestModel>(_unitOfWork.Object, _mapper.Object);
         }
 
-        // --- Costruzione ---
+        // --- Construction ---
 
         [Fact]
         public void Constructor_ResolvesRepositoryFromUnitOfWork()
         {
             CreateService();
 
-            // La risoluzione avviene una volta sola, in costruzione: se cambiasse o
-            // venisse rimossa, ogni metodo si troverebbe a parlare con un repository
-            // sbagliato o nullo, e fallirebbe piu' a valle senza indizi utili.
+            // Resolution happens only once, at construction: if it changed or
+            // were removed, every method would talk to a wrong or null
+            // repository and fail further downstream without useful clues.
             _unitOfWork.Verify(u => u.Repository<TestEntity>(), Times.Once);
         }
 
@@ -95,8 +95,8 @@ namespace HealthTrace.Test.BLL.Services
             var result = await service.GetByIdAsync(404);
 
             Assert.Null(result);
-            // Il ramo null deve cortocircuitare prima del mapper: con un mapper vero,
-            // Map<TestModel>(null) non avrebbe nulla su cui lavorare.
+            // The null branch must short-circuit before the mapper: with a real mapper,
+            // Map<TestModel>(null) would have nothing to work on.
             _mapper.Verify(m => m.Map<TestModel>(It.IsAny<object>()), Times.Never);
         }
 
@@ -145,8 +145,8 @@ namespace HealthTrace.Test.BLL.Services
             var result = await service.GetAllAsync();
 
             Assert.Equal(new List<int> { 1, 2 }, result.Select(m => m.Id).ToList());
-            // Al mapper arriva il risultato del repository cosi' com'e': questo service
-            // non filtra ne' riordina, e un test che lo assumesse fallirebbe qui.
+            // The mapper receives the repository result as is: this service
+            // neither filters nor sorts, and a test assuming it would fail here.
             Assert.Same(entities, mappedSource);
         }
 
@@ -163,8 +163,8 @@ namespace HealthTrace.Test.BLL.Services
 
             var result = await service.GetAllAsync();
 
-            // Elenco vuoto e' un caso normale, non un errore: deve restare una lista
-            // vuota e non un null, altrimenti il controller dovrebbe proteggerlo.
+            // An empty list is a normal case, not an error: it must stay an empty
+            // list and not null, otherwise the controller would have to guard against it.
             Assert.NotNull(result);
             Assert.Empty(result);
         }
@@ -190,8 +190,8 @@ namespace HealthTrace.Test.BLL.Services
 
             await service.CreateAsync(new TestModel { Name = "febbre" });
 
-            // Salvare prima di accodare non persisterebbe nulla: l'entita' non sarebbe
-            // ancora tracciata e la riga non arriverebbe mai in tabella.
+            // Saving before adding would persist nothing: the entity would not
+            // be tracked yet and the row would never reach the table.
             Assert.Equal(new[] { "Add", "Save" }, calls);
         }
 
@@ -202,8 +202,8 @@ namespace HealthTrace.Test.BLL.Services
             _mapper
                 .Setup(m => m.Map<TestEntity>(It.IsAny<TestModel>()))
                 .Returns(new TestEntity { Name = "febbre" });
-            // L'Id lo assegna il database, non il model in ingresso: qui lo simuliamo
-            // dentro AddAsync, che e' il momento in cui avviene davvero.
+            // The Id is assigned by the database, not by the incoming model: we simulate it
+            // inside AddAsync, which is when it really happens.
             _repository
                 .Setup(r => r.AddAsync(It.IsAny<TestEntity>(), It.IsAny<CancellationToken>()))
                 .Callback<TestEntity, CancellationToken>((entity, _) => entity.Id = 42)
@@ -218,9 +218,9 @@ namespace HealthTrace.Test.BLL.Services
 
             var result = await service.CreateAsync(new TestModel { Name = "febbre" });
 
-            // Il ritorno e' mappato dall'entita' DOPO AddAsync. Se il mapping avvenisse
-            // prima, l'Id resterebbe 0 e il chiamante riceverebbe un model inesistente:
-            // un bug che nessun test sui soli valori di ingresso riuscirebbe a vedere.
+            // The return value is mapped from the entity AFTER AddAsync. If the mapping happened
+            // before, the Id would stay 0 and the caller would receive a non-existent model:
+            // a bug that no test on input values alone could catch.
             Assert.Equal(42, result.Id);
             Assert.Equal("febbre", result.Name);
         }
@@ -265,8 +265,8 @@ namespace HealthTrace.Test.BLL.Services
             var result = await service.UpdateAsync(new TestModel { Id = 5, Name = "febbre" });
 
             Assert.Null(result);
-            // L'uscita anticipata e' tutto il punto di questo test: senza, un model
-            // riferito a una riga inesistente produrrebbe un update a vuoto.
+            // The early exit is the whole point of this test: without it, a model
+            // pointing to a non-existent row would produce an empty update.
             _repository.Verify(r => r.Update(It.IsAny<TestEntity>()), Times.Never);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
             _mapper.Verify(m => m.Map<TestModel, TestEntity>(
@@ -291,11 +291,11 @@ namespace HealthTrace.Test.BLL.Services
 
             await service.UpdateAsync(model);
 
-            // La ricerca usa model.Id: e' l'unico modo che il chiamante ha di dire
-            // quale riga aggiornare, e il service non deve indovinarlo.
+            // The lookup uses model.Id: it is the only way the caller has to say
+            // which row to update, and the service must not guess it.
             _repository.Verify(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()), Times.Once);
-            // I dati finiscono SULL'entita' esistente e non su una nuova: e' cio' che
-            // preserva le colonne non mappate e l'identita' della riga.
+            // The data lands ON the existing entity and not on a new one: that is what
+            // preserves unmapped columns and the row's identity.
             _mapper.Verify(m => m.Map<TestModel, TestEntity>(model, existing), Times.Once);
             _repository.Verify(r => r.Update(existing), Times.Once);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -304,7 +304,7 @@ namespace HealthTrace.Test.BLL.Services
         [Fact]
         public async Task UpdateAsync_ExistingEntity_ReturnsModelMappedFromExistingEntity()
         {
-            var model = new TestModel { Id = 5, Name = "dal model in ingresso" };
+            var model = new TestModel { Id = 5, Name = "from the incoming model" };
             var existing = new TestEntity { Id = 5, Name = "dall'entita' esistente" };
             var service = CreateService();
             _repository
@@ -322,9 +322,9 @@ namespace HealthTrace.Test.BLL.Services
 
             await service.UpdateAsync(model);
 
-            // L'argomento del mapping di ritorno e' l'entita' esistente, non il model
-            // in ingresso. Se qualcuno scrivesse Map<TestModel>(model), il chiamante
-            // riceverebbe i dati richiesti prima che siano stati applicati e salvati.
+            // The argument of the return mapping is the existing entity, not the incoming
+            // model. If someone wrote Map<TestModel>(model), the caller
+            // would receive the requested data before it was applied and saved.
             Assert.Same(existing, returnedFrom);
         }
 
@@ -368,8 +368,8 @@ namespace HealthTrace.Test.BLL.Services
 
             var result = await service.DeleteAsync(404);
 
-            // false e non un'eccezione: il chiamante distingue cosi' "non esisteva" da
-            // "cancellato", che sono esiti diversi per lo stesso tipo di risposta.
+            // false and not an exception: this way the caller tells "did not exist" apart from
+            // "deleted", which are different outcomes for the same kind of response.
             Assert.False(result);
             _repository.Verify(r => r.Delete(It.IsAny<TestEntity>()), Times.Never);
             _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);

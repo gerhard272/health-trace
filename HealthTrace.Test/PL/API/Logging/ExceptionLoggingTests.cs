@@ -164,7 +164,7 @@ namespace HealthTrace.Test.PL.API.Logging
         }
 
         private static StringContent LoginBody() => new(
-            "{\"username\":\"utente\",\"password\":\"password\"}",
+            "{\"username\":\"user\",\"password\":\"password\"}",
             Encoding.UTF8,
             "application/json");
 

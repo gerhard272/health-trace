@@ -3,18 +3,18 @@
 namespace HealthTrace.PL.API.Handlers.Interfaces
 {
     /// <summary>
-    /// Trasforma l'eccezione intercettata dal gestore globale nel ProblemDetails
-    /// (RFC 9457) restituito al client: è l'unico punto dell'applicazione in cui il
-    /// tipo di eccezione viene associato a uno status code HTTP, così i servizi del
-    /// BLL restano ignari dell'HTTP e i controller non devono mappare eccezioni.
-    /// Le eccezioni che derivano da AppException dichiarano nel messaggio un
-    /// contratto destinato al body della risposta; ogni altra eccezione è un errore
-    /// interno e non deve esporre dettagli.
+    /// Turns the exception caught by the global handler into the ProblemDetails
+    /// (RFC 9457) returned to the client: it is the only place in the application where an
+    /// exception type is associated with an HTTP status code, so BLL services
+    /// stay unaware of HTTP and controllers do not have to map exceptions.
+    /// Exceptions deriving from AppException declare in their message a
+    /// contract meant for the response body; any other exception is an internal
+    /// error and must not expose details.
     /// </summary>
     public interface IErrorDetailsMapper
     {
         /// <summary>
-        /// Restituisce i dati del problema corrispondenti all'eccezione ricevuta.
+        /// Returns the problem data matching the given exception.
         /// </summary>
         ProblemDetails Map(Exception exception);
     }

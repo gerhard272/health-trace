@@ -3,9 +3,9 @@ using HealthTrace.BLL.Exceptions;
 using HealthTrace.BLL.Models;
 using HealthTrace.BLL.Services.Interfaces;
 using HealthTrace.DAL;
-// Il namespace di questo file replica quello del codice sotto test, quindi la
-// regola di risoluzione dei namespace annidati non trova da sola il controller:
-// la dichiarazione esplicita serve.
+// This file's namespace mirrors that of the code under test, so the
+// nested namespace resolution rule does not find the controller on its own:
+// the explicit declaration is needed.
 using HealthTrace.PL.API.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,14 +16,14 @@ using Moq;
 namespace HealthTrace.Test.PL.API.Controllers
 {
     /// <summary>
-    /// Classe di test per SymptomController. A differenza di AuthController, qui il
-    /// controller contiene logica propria: ricava l'utente autenticato da
-    /// ICurrentUserService, sceglie il metodo del servizio in base ai filtri della
-    /// query, controlla la coerenza fra id di rotta e id del body e traduce i
-    /// risultati nulli o false del servizio in NotFoundException.
-    /// Gli esiti negativi non producono ActionResult: il controller lancia
-    /// l'eccezione applicativa, che il gestore globale traduce in ProblemDetails.
-    /// Per questo i test asseriscono tipo e contenuto dell'eccezione lanciata.
+    /// Test class for SymptomController. Unlike AuthController, this
+    /// controller has logic of its own: it gets the authenticated user from
+    /// ICurrentUserService, picks the service method based on the query
+    /// filters, checks that the route id matches the body id and turns
+    /// null or false service results into NotFoundException.
+    /// Failures do not produce an ActionResult: the controller throws
+    /// the application exception, which the global handler turns into ProblemDetails.
+    /// That is why the tests assert the type and content of the thrown exception.
     /// </summary>
     public class SymptomControllerTests
     {
@@ -52,7 +52,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             EventDate = EventDate
         };
 
-        // --- Utente non autenticato ---
+        // --- Unauthenticated user ---
 
         public static TheoryData<string, Func<SymptomController, Task>> AllActions => new()
         {
@@ -72,11 +72,11 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             await Assert.ThrowsAsync<UnauthorizedException>(() => invoke(controller));
 
-            // Senza utente il controllo avviene prima di qualsiasi accesso ai dati:
-            // il servizio non deve essere mai raggiunto, qualunque sia l'action.
+            // Without a user the check happens before any data access:
+            // the service must never be reached, whatever the action.
             _service.VerifyNoOtherCalls();
 
-            // actionName serve solo a rendere leggibile il nome del caso nel test explorer.
+            // actionName only makes the case name readable in the test explorer.
             _ = actionName;
         }
 
@@ -106,9 +106,9 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             await controller.GetById(SymptomId, cts.Token);
 
-            // L'utente è sempre quello autenticato: è il servizio a filtrare per
-            // proprietario, quindi l'id utente corretto è ciò che impedisce di
-            // leggere i sintomi di un altro utente.
+            // The user is always the authenticated one: the service filters by
+            // owner, so the correct user id is what prevents
+            // reading another user's symptoms.
             _service.Verify(s => s.GetByIdAsync(UserId, SymptomId, cts.Token), Times.Once);
             _service.VerifyNoOtherCalls();
         }
@@ -123,7 +123,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             var ex = await Assert.ThrowsAsync<NotFoundException>(
                 () => controller.GetById(SymptomId, CancellationToken.None));
 
-            // Nome risorsa e chiave alimentano le estensioni del 404 nel mapper.
+            // Resource name and key feed the 404 extensions in the mapper.
             Assert.Equal(ResourceName, ex.ResourceName);
             Assert.Equal(SymptomId, ex.Key);
         }
@@ -136,7 +136,7 @@ namespace HealthTrace.Test.PL.API.Controllers
         [InlineData(" ")]
         public async Task GetAllSymptoms_WithoutFilters_ReturnsAllUserSymptoms(string? name)
         {
-            // Un nome vuoto o fatto di soli spazi equivale all'assenza del filtro.
+            // An empty or whitespace-only name is the same as no filter.
             IReadOnlyList<SymptomModel> symptoms = [Symptom(1), Symptom(2)];
             using var cts = new CancellationTokenSource();
             _service.Setup(s => s.GetAllByUserIdAsync(UserId, cts.Token)).ReturnsAsync(symptoms);
@@ -195,16 +195,16 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             Assert.Equal("Specify only one of 'date' or 'name'.", ex.Message);
 
-            // I filtri sono mutuamente esclusivi: la richiesta viene respinta senza
-            // interrogare il servizio, invece di applicarne uno solo in silenzio.
+            // The filters are mutually exclusive: the request is rejected without
+            // querying the service, instead of silently applying only one.
             _service.VerifyNoOtherCalls();
         }
 
         [Fact]
         public async Task GetAllSymptoms_WithDateAndBlankName_FiltersByDate()
         {
-            // Il nome fatto di soli spazi non conta come filtro: non deve far scattare
-            // l'errore dei filtri combinati.
+            // A whitespace-only name does not count as a filter: it must not trigger
+            // the combined-filters error.
             IReadOnlyList<SymptomModel> symptoms = [Symptom()];
             _service.Setup(s => s.GetByDateAsync(UserId, EventDate, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(symptoms);
@@ -234,8 +234,8 @@ namespace HealthTrace.Test.PL.API.Controllers
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             Assert.Equal(StatusCodes.Status201Created, createdResult.StatusCode);
 
-            // L'header Location punta a GetById con l'id assegnato dal servizio,
-            // non con quello (assente) del body ricevuto.
+            // The Location header points to GetById with the id assigned by the service,
+            // not with the (missing) one from the received body.
             Assert.Equal(nameof(SymptomController.GetById), createdResult.ActionName);
             Assert.Equal(SymptomId, createdResult.RouteValues!["id"]);
             Assert.Same(created, createdResult.Value);
@@ -244,8 +244,8 @@ namespace HealthTrace.Test.PL.API.Controllers
         [Fact]
         public async Task Create_PassesAuthenticatedUserIdIgnoringBodyUserId()
         {
-            // Il body dichiara un altro proprietario: il controller deve comunque
-            // passare al servizio l'id dell'utente autenticato.
+            // The body declares a different owner: the controller must still
+            // pass the authenticated user's id to the service.
             var input = Symptom(id: 0);
             input.UserId = 12345;
             using var cts = new CancellationTokenSource();
@@ -287,7 +287,7 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             Assert.Equal("The id in the route does not match the id in the request body.", ex.Message);
 
-            // L'incoerenza viene respinta prima di toccare i dati.
+            // The mismatch is rejected before touching the data.
             _service.VerifyNoOtherCalls();
         }
 
@@ -337,15 +337,15 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Equal(SymptomId, ex.Key);
         }
 
-        // --- Attributi di routing e autorizzazione ---
+        // --- Routing and authorization attributes ---
 
         [Fact]
         public void Controller_RequiresAuthorizationAndUsesSymptomRoute()
         {
             var type = typeof(SymptomController);
 
-            // A differenza di AuthController, tutte le action richiedono un utente
-            // autenticato e nessuna deve sfuggire con AllowAnonymous.
+            // Unlike AuthController, every action requires an authenticated
+            // user and none may slip through with AllowAnonymous.
             Assert.NotNull(type.GetCustomAttribute<AuthorizeAttribute>());
             Assert.NotNull(type.GetCustomAttribute<ApiControllerAttribute>());
             Assert.Equal("api/[controller]", type.GetCustomAttribute<RouteAttribute>()?.Template);

@@ -10,7 +10,7 @@ namespace HealthTrace.DAL.Repositories
         private readonly HealthTraceDbContext _context;
         private readonly ConcurrentDictionary<Type, object> _repositories = new();
 
-        //dependency injection del DbContext tramite il costruttore
+        //DbContext injected through the constructor
         public UnitOfWork(HealthTraceDbContext context)
         {
             _context = context;
@@ -32,7 +32,7 @@ namespace HealthTrace.DAL.Repositories
         {
             return await _context.SaveChangesAsync(cancellationToken);
         }
-        // Implementazione di Dispose() per liberare le risorse del DbContext
+        // Dispose() implementation to release the DbContext resources
         public void Dispose()
         {
             _context.Dispose();

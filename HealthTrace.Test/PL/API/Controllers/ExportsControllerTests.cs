@@ -14,14 +14,14 @@ using Moq;
 namespace HealthTrace.Test.PL.API.Controllers
 {
     /// <summary>
-    /// Classe di test per ExportsController. Il controller ricava l'utente autenticato
-    /// da ICurrentUserService, valida l'intervallo di date della richiesta, affida
-    /// l'elaborazione a IExportJobDispatcher e traduce gli esiti del servizio in
-    /// risposte HTTP. Come negli altri controller, gli esiti negativi non producono
-    /// ActionResult: il controller lancia l'eccezione applicativa, che il gestore
-    /// globale traduce in ProblemDetails. I test asseriscono quindi tipo e contenuto
-    /// dell'eccezione, e gli attributi ProducesResponseType che documentano quegli
-    /// status code nella specifica OpenAPI.
+    /// Test class for ExportsController. The controller gets the authenticated user
+    /// from ICurrentUserService, validates the request's date range, hands
+    /// processing to IExportJobDispatcher and turns the service outcomes into
+    /// HTTP responses. As in the other controllers, failures do not produce an
+    /// ActionResult: the controller throws the application exception, which the global
+    /// handler turns into ProblemDetails. The tests therefore assert the type and content
+    /// of the exception, and the ProducesResponseType attributes that document those
+    /// status codes in the OpenAPI specification.
     /// </summary>
     public class ExportsControllerTests
     {
@@ -73,7 +73,7 @@ namespace HealthTrace.Test.PL.API.Controllers
                 .ReturnsAsync(current);
         }
 
-        // --- Utente non autenticato ---
+        // --- Unauthenticated user ---
 
         public static TheoryData<string, Func<ExportsController, Task>> AllActions => new()
         {
@@ -92,19 +92,19 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             await Assert.ThrowsAsync<UnauthorizedException>(() => invoke(controller));
 
-            // Senza utente né il servizio né il dispatcher devono essere raggiunti.
+            // Without a user neither the service nor the dispatcher must be reached.
             _service.VerifyNoOtherCalls();
             _dispatcher.VerifyNoOtherCalls();
 
-            // actionName serve solo a rendere leggibile il nome del caso nel test explorer.
+            // actionName only makes the case name readable in the test explorer.
             _ = actionName;
         }
 
         [Fact]
         public async Task RequestExport_WithoutAuthenticatedUserAndInvalidRange_ThrowsUnauthorizedException()
         {
-            // Il 401 ha la precedenza sul 400: a un client non autenticato non si
-            // risponde con l'esito della validazione del body.
+            // 401 takes precedence over 400: an unauthenticated client does not
+            // get the outcome of the body validation.
             var controller = CreateController(userId: null);
 
             await Assert.ThrowsAsync<UnauthorizedException>(
@@ -128,8 +128,8 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Equal(nameof(ExportsController.GetById), accepted.ActionName);
             Assert.Equal(ExportId, accepted.RouteValues!["id"]);
 
-            // Il corpo è lo stato riletto dopo il dispatch, non quello della creazione:
-            // con il dispatcher inline l'export può già essere completato.
+            // The body is the state re-read after dispatch, not the one at creation:
+            // with the inline dispatcher the export may already be completed.
             Assert.Same(current, accepted.Value);
         }
 
@@ -157,8 +157,8 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             await controller.RequestExport(model, cts.Token);
 
-            // La rilettura ha senso solo dopo il dispatch, e il dispatch solo dopo
-            // che la richiesta è stata salvata e ha un id.
+            // Re-reading only makes sense after dispatch, and dispatch only after
+            // the request has been saved and has an id.
             Assert.Equal(new[] { "request", "dispatch", "reread" }, calls);
 
             _service.Verify(s => s.RequestExportAsync(UserId, model, cts.Token), Times.Once);
@@ -171,8 +171,8 @@ namespace HealthTrace.Test.PL.API.Controllers
         [Fact]
         public async Task RequestExport_RereadReturnsNull_Returns202WithCreatedModel()
         {
-            // La richiesta è già stata registrata: se la rilettura non la trova il
-            // client riceve comunque 202 con il modello creato, non un 404.
+            // The request has already been stored: if the re-read does not find it, the
+            // client still gets 202 with the created model, not a 404.
             var created = Export();
             SetupRequestExport(created, current: null);
             var controller = CreateController();
@@ -194,7 +194,7 @@ namespace HealthTrace.Test.PL.API.Controllers
 
             Assert.Equal("FromDate cannot be later than ToDate.", ex.Message);
 
-            // L'intervallo non valido viene respinto prima di salvare o elaborare.
+            // An invalid range is rejected before saving or processing.
             _service.VerifyNoOtherCalls();
             _dispatcher.VerifyNoOtherCalls();
         }
@@ -212,7 +212,7 @@ namespace HealthTrace.Test.PL.API.Controllers
         [MemberData(nameof(ValidRanges))]
         public async Task RequestExport_ValidOrPartialRange_IsAccepted(DateTime? from, DateTime? to)
         {
-            // Estremi mancanti o coincidenti non sono un errore: solo from > to lo è.
+            // Missing or equal bounds are not an error: only from > to is.
             SetupRequestExport(Export(), Export());
             var controller = CreateController();
 
@@ -264,8 +264,8 @@ namespace HealthTrace.Test.PL.API.Controllers
         [Fact]
         public async Task GetById_ExportNotFound_ThrowsNotFoundException()
         {
-            // Il servizio restituisce null anche per gli export di un altro utente:
-            // il 404 non rivela se l'export esiste ma non è del chiamante.
+            // The service also returns null for another user's exports:
+            // the 404 does not reveal whether the export exists but belongs to someone else.
             _service.Setup(s => s.GetByIdAsync(UserId, ExportId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ExportRequestModel?)null);
             var controller = CreateController();
@@ -301,7 +301,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Same(content, file.FileStream);
             Assert.Equal(PdfContentType, file.ContentType);
 
-            // Il nome del file finisce nell'header Content-Disposition come allegato.
+            // The file name ends up in the Content-Disposition header as an attachment.
             Assert.Equal(FileName, file.FileDownloadName);
 
             _service.Verify(s => s.GetByIdAsync(UserId, ExportId, cts.Token), Times.Once);
@@ -338,7 +338,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             var ex = await Assert.ThrowsAsync<ConflictException>(
                 () => controller.Download(ExportId, CancellationToken.None));
 
-            // 409 e non 404: l'export esiste, ma il suo stato non consente ancora il download.
+            // 409 and not 404: the export exists, but its state does not allow download yet.
             Assert.Equal($"Export {ExportId} is not ready for download (status: {status}).", ex.Message);
 
             _service.Verify(s => s.GetFileAsync(
@@ -356,7 +356,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             var ex = await Assert.ThrowsAsync<ConflictException>(
                 () => controller.Download(ExportId, CancellationToken.None));
 
-            // Per un export fallito il client riceve il motivo registrato dal servizio.
+            // For a failed export the client gets the reason recorded by the service.
             Assert.Equal(errorMessage, ex.Message);
 
             _service.Verify(s => s.GetFileAsync(
@@ -366,8 +366,8 @@ namespace HealthTrace.Test.PL.API.Controllers
         [Fact]
         public async Task Download_CompletedExportWithoutFile_ThrowsNotFoundException()
         {
-            // Stato Completed ma file assente (ad esempio blob non registrato):
-            // il servizio restituisce null e il controller risponde 404.
+            // Completed state but no file (e.g. blob not recorded):
+            // the service returns null and the controller responds 404.
             _service.Setup(s => s.GetByIdAsync(UserId, ExportId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Export(ExportStatus.Completed));
             _service.Setup(s => s.GetFileAsync(UserId, ExportId, It.IsAny<CancellationToken>()))
@@ -381,7 +381,7 @@ namespace HealthTrace.Test.PL.API.Controllers
             Assert.Equal(ExportId, ex.Key);
         }
 
-        // --- Attributi di routing e autorizzazione ---
+        // --- Routing and authorization attributes ---
 
         [Fact]
         public void Controller_RequiresAuthorizationAndUsesExportsRoute()
@@ -430,8 +430,8 @@ namespace HealthTrace.Test.PL.API.Controllers
                     StatusCodes.Status500InternalServerError })]
         public void Action_DocumentsExpectedStatusCodes(string actionName, int[] expectedStatusCodes)
         {
-            // Gli esiti negativi arrivano come eccezioni, quindi senza questi attributi
-            // la specifica OpenAPI mostrerebbe solo la risposta di successo.
+            // Failures arrive as exceptions, so without these attributes
+            // the OpenAPI specification would only show the success response.
             var method = typeof(ExportsController).GetMethod(actionName)!;
 
             var documented = method.GetCustomAttributes<ProducesResponseTypeAttribute>()

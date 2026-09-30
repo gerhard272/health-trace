@@ -7,53 +7,53 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace HealthTrace.Test.BLL.Mapping
 {
     /// <summary>
-    /// Classe di test per MappingProfile, l'unico profilo AutoMapper del BLL: e' il punto in cui
-    /// entita' e DTO si incontrano, e i servizi lo ignorano del tutto (UserService, SymptomService,
-    /// GenericService ed ExportService ricevono solo IMapper). Non serve alcun mock ne' un DbContext:
-    /// il profilo e' puro, si registra in una configurazione e si usa, quindi ogni assertion riguarda
-    /// una delle quattro coppie di tipi che dichiara davvero.
-    /// I dati sono inventati e volutamente non plausibili: il profilo non valida nulla, quindi un
-    /// codice fiscale in forma corretta non aggiungerebbe copertura e rischierebbe di essere scambiato
-    /// per un dato reale. Le costanti sono locali di questa classe e non riprese dagli altri test, cosi'
-    /// i file restano indipendenti.
-    /// Le asserzioni usano valori distintivi: con entita' ai valori di default un mapping sbagliato
-    /// passerebbe comunque, quindi i default servono solo nei casi in cui il default e' il risultato
-    /// atteso (PasswordHash, Id, campi di audit).
-    /// Nota su AutoMapper 16: MapperConfiguration non espone piu' il costruttore a un argomento, quindi
-    /// qui si passa un NullLoggerFactory. Senza chiave di licenza AutoMapper logga un warning
-    /// ("allowed for development and testing"): e' atteso e non rende il test rosso.
-    /// Nota sulla validazione della configurazione: ReverseMap() registra la direzione inversa con
-    /// MemberList.None, quindi AssertConfigurationIsValid copre solo le direzioni dichiarate in
-    /// esplicito, cioe' User -> UserModel, RegisterModel -> User e Symptom -> SymptomModel. Su
-    /// RegisterModel -> User la validazione segnala Id e i campi di audit come non mappati, perche'
-    /// sono valorizzati da EF e non dal client: l'ultimo test fissa lo stato attuale invece di
-    /// lasciare un test rosso.
+    /// Test class for MappingProfile, the only AutoMapper profile in the BLL: it is where
+    /// entities and DTOs meet, and the services know nothing about it (UserService, SymptomService,
+    /// GenericService and ExportService only receive IMapper). No mocks or DbContext needed:
+    /// the profile is pure, it is registered in a configuration and used, so every assertion is about
+    /// one of the four type pairs it actually declares.
+    /// The data is made up and deliberately implausible: the profile validates nothing, so a
+    /// well-formed fiscal code would add no coverage and could be mistaken
+    /// for real data. The constants are local to this class and not shared with other tests, so
+    /// the files stay independent.
+    /// Assertions use distinctive values: with entities at default values a wrong mapping
+    /// would pass anyway, so defaults are only used where the default is the expected
+    /// result (PasswordHash, Id, audit fields).
+    /// Note on AutoMapper 16: MapperConfiguration no longer exposes the single-argument constructor, so
+    /// a NullLoggerFactory is passed here. Without a license key AutoMapper logs a warning
+    /// ("allowed for development and testing"): it is expected and does not fail the test.
+    /// Note on configuration validation: ReverseMap() registers the reverse direction with
+    /// MemberList.None, so AssertConfigurationIsValid only covers the directions declared
+    /// explicitly, i.e. User -> UserModel, RegisterModel -> User and Symptom -> SymptomModel. On
+    /// RegisterModel -> User the validation reports Id and the audit fields as unmapped, because
+    /// they are set by EF and not by the client: the last test pins the current state instead of
+    /// leaving a failing test.
     /// </summary>
     public class MappingProfileTests
     {
-        // Dati fittizi: nessuno di questi valori corrisponde a una persona reale.
+        // Fake data: none of these values belongs to a real person.
         private const string TestUsername = "test.user";
-        private const string TestFirstName = "nome-di-test";
-        private const string TestLastName = "cognome-di-test";
+        private const string TestFirstName = "test-first-name";
+        private const string TestLastName = "test-last-name";
         private const string TestCf = "CF-FITTIZIO";
-        private const string TestBirthPlace = "citta-di-test";
-        private const string TestPassword = "Password-di-test-1!";
-        private const string TestPasswordConfirmation = "Password-di-test-1!";
-        private const string TestPasswordHash = "hash-di-test";
-        private const string TestEventName = "evento-di-test";
-        private const string TestDescription = "descrizione-di-test";
+        private const string TestBirthPlace = "test-city";
+        private const string TestPassword = "Test-password-1!";
+        private const string TestPasswordConfirmation = "Test-password-1!";
+        private const string TestPasswordHash = "test-hash";
+        private const string TestEventName = "test-event";
+        private const string TestDescription = "test-description";
 
         private const int TestId = 42;
         private const int TestUserId = 7;
-        private const string TestAuditMarker = "marcatore-di-audit";
+        private const string TestAuditMarker = "audit-marker";
 
         private static readonly DateOnly TestBirthDate = new(1980, 1, 1);
         private static readonly DateTime TestEventDate = new(2024, 5, 17, 10, 30, 0, DateTimeKind.Utc);
 
         private readonly IMapper _mapper = BuildConfiguration().CreateMapper();
 
-        // La configurazione replica la registrazione di produzione (Program.cs e Functions/Program.cs
-        // passano l'assembly del BLL): il profilo viene scoperto dalla scansione dell'assembly.
+        // The configuration mirrors the production registration (Program.cs and Functions/Program.cs
+        // pass the BLL assembly): the profile is discovered by scanning the assembly.
         private static MapperConfiguration BuildConfiguration() =>
             new(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
 
@@ -110,9 +110,9 @@ namespace HealthTrace.Test.BLL.Mapping
             EventDate = TestEventDate
         };
 
-        // Un'entita' con i campi di audit valorizzati serve a distinguere "il mapper non ha toccato
-        // niente" da "il mapper ha riscritto il campo": CreatedBy riceve TestAuditMarker, cosi' la
-        // sovrascrittura sarebbe visibile.
+        // An entity with populated audit fields tells "the mapper did not touch
+        // anything" apart from "the mapper rewrote the field": CreatedBy gets TestAuditMarker, so
+        // an overwrite would be visible.
         private static User UserWithAudit() => new()
         {
             Id = TestId,
@@ -138,8 +138,8 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_UserToUserModel_CopiesIdAndProfileFields()
         {
-            // Il DTO di output e' la forma in cui l'utente viaggia verso il client: se un campo
-            // profilo non arrivasse, la risposta sarebbe incompleta senza che nulla fallisse.
+            // The output DTO is the shape in which the user travels to the client: if a profile
+            // field did not arrive, the response would be incomplete without anything failing.
             var model = _mapper.Map<UserModel>(SampleUser());
 
             Assert.Equal(TestId, model.Id);
@@ -154,8 +154,8 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_UserToUserModel_KeepsNullOptionalFields()
         {
-            // Nati e luogo di nascita sono opzionali: il mapper non deve trasformarli in stringhe
-            // vuote o in date di default, perche' il client distingue "non valorizzato" da "vuoto".
+            // Birth date and birth place are optional: the mapper must not turn them into empty
+            // strings or default dates, because the client distinguishes "not set" from "empty".
             var user = new User { Username = TestUsername };
 
             var model = _mapper.Map<UserModel>(user);
@@ -167,9 +167,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_UserToUserModel_LeavesSourceEntityUntouched()
         {
-            // Il mapping verso un DTO non e' un aggiornamento: l'entita' letta dal repository deve
-            // restare come era, altrimenti un servizio che mappo' per leggere finirebbe per
-            // scrivere dati in memoria senza accorgersene.
+            // Mapping to a DTO is not an update: the entity read from the repository must
+            // stay as it was, otherwise a service that mapped in order to read would end up
+            // writing data in memory without noticing.
             var user = SampleUser();
 
             var model = _mapper.Map<UserModel>(user);
@@ -183,10 +183,10 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_UserModelToUser_CopiesProfileFieldsAndLeavesPasswordHashEmpty()
         {
-            // La direzione inversa esiste per il ReverseMap, ma il DTO non contiene l'hash: quindi
-            // l'entita' ottenuta non ne ha uno. E' il motivo per cui in UserService la creazione di un
-            // utente avviene solo da RegisterAsync, che imposta l'hash subito dopo il mapping: se
-            // questa asserzione cambiasse, un utente potrebbe essere persistito senza credenziali.
+            // The reverse direction exists because of ReverseMap, but the DTO has no hash: so
+            // the resulting entity has none. This is why in UserService a user is created
+            // only through RegisterAsync, which sets the hash right after the mapping: if
+            // this assertion changed, a user could be persisted without credentials.
             var user = _mapper.Map<User>(SampleUserModel());
 
             Assert.Equal(TestId, user.Id);
@@ -210,9 +210,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [InlineData(nameof(AuditEntity.IsDeleted))]
         public void UserModel_ExposesNoSensitiveOrAuditProperty(string propertyName)
         {
-            // Non basta che il mapper non valorizzi questi campi: e' il DTO stesso a non poterli
-            // trasportare, cosi' l'hash non puo' finire in una risposta nemmeno se un altro mapping
-            // li assegna. I campi di audit restano cosi' responsabilita' del DAL e non del BLL.
+            // It is not enough that the mapper does not set these fields: the DTO itself cannot
+            // carry them, so the hash cannot end up in a response even if another mapping
+            // assigns them. Audit fields therefore stay the DAL's responsibility, not the BLL's.
             Assert.Null(typeof(UserModel).GetProperty(propertyName));
         }
 
@@ -221,8 +221,8 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_RegisterModel_CopiesProfileFields()
         {
-            // Il DTO di registrazione eredita da UserBaseModel: i suoi campi devono arrivare
-            // nell'entita' altrimenti l'utente verrebbe salvato con i valori di default.
+            // The registration DTO inherits from UserBaseModel: its fields must reach
+            // the entity, otherwise the user would be saved with default values.
             var user = _mapper.Map<User>(SampleRegisterModel());
 
             Assert.Equal(TestUsername, user.Username);
@@ -236,9 +236,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_RegisterModel_LeavesPasswordHashEmpty()
         {
-            // Il test centrale del task: RegisterModel porta la password in chiaro e l'entita' ha
-            // un campo PasswordHash. L'Ignore esplicito nel profilo serve proprio a impedire che il
-            // mapper scriva qualcosa li', e l'hash viene calcolato dal servizio subito dopo.
+            // The key test: RegisterModel carries the plain-text password and the entity has
+            // a PasswordHash field. The explicit Ignore in the profile exists precisely to stop the
+            // mapper from writing anything there; the hash is computed by the service right after.
             var user = _mapper.Map<User>(SampleRegisterModel());
 
             Assert.Equal(TestPassword, SampleRegisterModel().Password);
@@ -248,9 +248,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_RegisterModel_DoesNotWriteIdOrAuditFields()
         {
-            // Un utente nuovo nasce senza identita' ne' tracciabilita': se il mapper scrivesse
-            // CreatedAt o CreatedBy, l'audit di chi registra sarebbe attribuito al servizio e non
-            // alla persona che ha eseguito l'operazione.
+            // A new user is born without identity or audit trail: if the mapper wrote
+            // CreatedAt or CreatedBy, the registration audit would be attributed to the service and not
+            // to the person who performed the operation.
             var user = _mapper.Map<User>(SampleRegisterModel());
 
             Assert.Equal(0, user.Id);
@@ -268,9 +268,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [InlineData(nameof(RegisterModel.PasswordConfirmation))]
         public void User_HasNoPropertyForPlainPassword(string propertyName)
         {
-            // Le credenziali in chiaro non hanno una destinazione nell'entita': il mapping le scarta
-            // e basta. Questa asserzione blocca l'evoluzione peggiore del profilo, cioe' l'aggiunta di
-            // una property in chiaro su User che riporterebbe le credenziali in chiaro in tabella.
+            // Plain-text credentials have no destination in the entity: the mapping simply drops
+            // them. This assertion blocks the worst evolution of the profile, i.e. adding
+            // a plain-text property on User that would store credentials in clear in the table.
             Assert.Null(typeof(User).GetProperty(propertyName));
         }
 
@@ -279,8 +279,8 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_SymptomToSymptomModel_CopiesIdUserIdEventNameDescriptionAndDate()
         {
-            // E' il percorso di lettura dei sintomi: se un campo non arrivasse, la lista restituita
-            // al client sarebbe incompleta senza errori.
+            // This is the read path for symptoms: if a field did not arrive, the list returned
+            // to the client would be incomplete without errors.
             var model = _mapper.Map<SymptomModel>(SampleSymptom());
 
             Assert.Equal(TestId, model.Id);
@@ -293,8 +293,8 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_SymptomToSymptomModel_KeepsNullDescription()
         {
-            // La descrizione e' opzionale: deve restare null e non diventare una stringa vuota,
-            // altrimenti il report di export stamperebbe un trattino dove non c'e' nulla.
+            // The description is optional: it must stay null and not become an empty string,
+            // otherwise the export report would print a dash where there is nothing.
             var model = _mapper.Map<SymptomModel>(new Symptom { EventName = TestEventName });
 
             Assert.Null(model.Description);
@@ -305,10 +305,10 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_SymptomModelToSymptom_CopiesAllFieldsIncludingUserId()
         {
-            // UserId viene copiato come qualsiasi altro campo: e' per questo che SymptomService lo
-            // sovrascrive con l'utente autenticato subito dopo il mapping, altrimenti un client
-            // potrebbe assegnare un sintomo a un altro utente. Il override e' una difesa del
-            // servizio, non un effetto del profilo, e questa asserzione lo tiene fermo.
+            // UserId is copied like any other field: that is why SymptomService
+            // overwrites it with the authenticated user right after the mapping, otherwise a client
+            // could assign a symptom to another user. The override is a defense of the
+            // service, not an effect of the profile, and this assertion pins it down.
             var symptom = _mapper.Map<Symptom>(SampleSymptomModel());
 
             Assert.Equal(TestId, symptom.Id);
@@ -318,14 +318,14 @@ namespace HealthTrace.Test.BLL.Mapping
             Assert.Equal(TestEventDate, symptom.EventDate);
         }
 
-        // --- Collezioni ---
+        // --- Collections ---
 
         [Fact]
         public void Map_SymptomList_MapsEveryItemAndPreservesOrder()
         {
-            // Le liste sono il percorso piu' usato del profilo (GetAllByUserIdAsync ed
-            // ExportService): l'ordine arriva dal repository e deve arrivare al client, perche' il
-            // report e la lista della UI lo usano come ordine di lettura.
+            // Lists are the most used path of the profile (GetAllByUserIdAsync and
+            // ExportService): the order comes from the repository and must reach the client, because the
+            // report and the UI list use it as reading order.
             IReadOnlyList<Symptom> symptoms =
             [
                 new() { Id = TestId, UserId = TestUserId, EventName = "primo", EventDate = TestEventDate },
@@ -345,25 +345,25 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_EmptySymptomList_ReturnsEmptyList()
         {
-            // Un utente senza sintomi e' un caso normale, non un errore: la lista vuota deve restare
-            // vuota invece di trasformarsi in una lista con un elemento vuoto.
+            // A user without symptoms is a normal case, not an error: the empty list must stay
+            // empty instead of becoming a list with an empty element.
             var models = _mapper.Map<IReadOnlyList<SymptomModel>>(Array.Empty<Symptom>());
 
             Assert.Empty(models);
         }
 
-        // --- Mapping su entita' esistente ---
+        // --- Mapping onto an existing entity ---
 
         [Fact]
         public void Map_SymptomModelOntoExistingSymptom_UpdatesFieldsAndKeepsIdAndAudit()
         {
-            // E' il percorso di aggiornamento usato da SymptomService e dal CRUD generico. L'Id e'
-            // l'unico campo che il DTO sovrascrive davvero: in entrambi i call site e' la chiave con
-            // cui l'entita' e' stata caricata, quindi la riscrittura non cambia l'identita' della
-            // riga, e qui viene fatto di proposito con un altro valore per rendere il comportamento
-            // visibile. I campi di audit invece non esistono nel DTO e devono restare intatti: se
-            // venissero azzerati, l'entita' ripartirebbe da una tracciabilita' falsa dopo ogni
-            // modifica.
+            // This is the update path used by SymptomService and the generic CRUD. Id is
+            // the only field the DTO really overwrites: at both call sites it is the key with
+            // which the entity was loaded, so rewriting it does not change the row's identity,
+            // and here it is done on purpose with a different value to make the behavior
+            // visible. Audit fields, on the other hand, do not exist in the DTO and must stay intact: if
+            // they were reset, the entity would restart from a false audit trail after every
+            // change.
             var entity = SymptomWithAudit();
 
             _mapper.Map(new SymptomModel
@@ -387,9 +387,9 @@ namespace HealthTrace.Test.BLL.Mapping
         [Fact]
         public void Map_UserModelOntoExistingUser_KeepsPasswordHashAndAudit()
         {
-            // Stessa logica del caso precedente sul lato utente, con un vincolo in piu': il DTO non ha
-            // il campo PasswordHash, quindi l'hash gia' persistito deve restare quello. Un update non
-            // puo' azzerare le credenziali di un utente esistente.
+            // Same logic as the previous case on the user side, with one more constraint: the DTO has no
+            // PasswordHash field, so the hash already persisted must stay the same. An update cannot
+            // wipe the credentials of an existing user.
             var entity = UserWithAudit();
 
             _mapper.Map(new UserModel
@@ -410,20 +410,20 @@ namespace HealthTrace.Test.BLL.Mapping
             Assert.Null(entity.BirthPlace);
         }
 
-        // --- Configurazione ---
+        // --- Configuration ---
 
         [Fact]
         public void Profile_ValidationReportsUnmappedMembersOnlyForRegisterModelToUser()
         {
-            // La validazione globale del profilo oggi NON e' verde, e il motivo e' noto: la coppia
-            // RegisterModel -> User ha come membri di destinazione Id e i campi di AuditEntity, che
-            // il client non invia e che vengono valorizzati da EF/UnitOfWork. Non si committa un
-            // test rosso: questo test fissa lo stato attuale, cosi' il gap resta visibile e, se un
-            // domani il profilo verra' corretto (MemberList.None, oppure Ignore esplicito su Id e
-            // campi di audit), il test segnalera' che la documentazione qui e' da aggiornare.
-            // Le altre tre direzioni sono invece complete, ed e' questo il vero controllo: un membro
-            // non mappato aggiunto in futuro su User -> UserModel o Symptom -> SymptomModel fa
-            // fallire il test, perche' l'eccezione li elencherebbe.
+            // The global validation of the profile is NOT green today, and the reason is known: the
+            // RegisterModel -> User pair has Id and the AuditEntity fields as destination members, which
+            // the client does not send and which are set by EF/UnitOfWork. We do not commit a
+            // failing test: this test pins the current state, so the gap stays visible and, if
+            // one day the profile is fixed (MemberList.None, or an explicit Ignore on Id and the
+            // audit fields), the test will signal that the documentation here needs updating.
+            // The other three directions are complete, and that is the real check: an unmapped
+            // member added in the future on User -> UserModel or Symptom -> SymptomModel makes
+            // the test fail, because the exception would list it.
             var configuration = BuildConfiguration();
 
             var exception = Assert.Throws<AutoMapperConfigurationException>(configuration.AssertConfigurationIsValid);
